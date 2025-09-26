@@ -1,0 +1,19 @@
+{
+  "name": "business-apps",
+  "version": "1.0.0",
+  "description": "Business applications monorepo",
+  "private": true,
+  "workspaces": [
+    "pms-app",
+    "tour-app",
+    "shared/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=pms-app\" \"npm run dev --workspace=tour-app\"",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
