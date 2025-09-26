@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { MainContent } from './MainContent';
+import { getDashboardType } from '../dashboards';
 
 interface User {
   id: string;
@@ -21,8 +22,28 @@ interface DashboardContainerProps {
 }
 
 export function DashboardContainer({ user, onLogout }: DashboardContainerProps) {
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  // Get default dashboard based on user role
+  const getDefaultDashboard = () => {
+    switch (user.role) {
+      case 'ADMIN':
+      case 'HR':
+        return 'organization-dashboard';
+      case 'MANAGER':
+      case 'TEAMLEAD':
+        return 'team-dashboard';
+      case 'EMPLOYEE':
+      default:
+        return 'personal-dashboard';
+    }
+  };
+
+  const [activeMenu, setActiveMenu] = useState(getDefaultDashboard);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Update activeMenu when user role changes (if user object changes)
+  useEffect(() => {
+    setActiveMenu(getDefaultDashboard());
+  }, [user.role]);
 
   return (
     <div className="min-h-screen surface flex">

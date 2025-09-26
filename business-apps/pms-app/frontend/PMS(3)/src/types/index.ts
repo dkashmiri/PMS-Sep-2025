@@ -62,3 +62,12 @@ export type {
   NotificationChannel,
   NotificationPreference
 } from './notification.types';
+
+export * from './review-matrix.types';
+
+export type {
+  ReviewData,
+  EvidenceFile,
+  KRAInReview,
+  GoalInReview
+} from './review-matrix.types';

@@ -1,0 +1,1928 @@
+# Performance Management System (PMS) - Complete Project Specification
+
+## Project Overview
+
+### System Architecture
+- **Common Authentication Database**: Shared across multiple projects (PMS, Tour Management, etc.)
+- **PMS Project Database**: Performance management specific functionality
+- **Frontend**: React/Next.js with Tailwind CSS
+- **Backend**: NestJS/Node.js with REST APIs
+- **Database**: MySQL 8.0+ with Redis caching
+- **Authentication**: JWT-based with refresh tokens
+- **File Storage**: AWS S3 for attachments and evidence
+- **Deployment**: Docker containers with Kubernetes orchestration
+
+### Organizational Structure
+Company → Operating Units → Departments → Projects (optional) → Employees
+- Department Master contains multiple Projects
+- Project Master maps to specific Departments with KRA assignments
+- KRA Master can be domain-specific and project-specific
+- User Management: Department + Domain + R1 (Team Lead) + R2 (Manager) mapping
+
+### Review Flow Process
+1. Employee Self-Assessment (ratings, comments, attachments, goal progress)
+2. R1 Review - Team Lead (sees employee data + adds own + validates goals)
+3. R2 Review - Manager (sees all data + adds final + approves goal achievements)
+4. System Calculation → Green/Yellow/Red zones based on weighted scores + goal achievements
+
+## Enhanced Goal Management Features
+
+### Goal Integration in Reviews
+- Employee goals visible in review matrix alongside KRAs
+- Real-time goal progress display with evidence links
+- Cross-cycle goal achievement tracking
+- Goal-KRA alignment scoring
+- Evidence validation by reviewers
+
+### Goal Achievement Measurement
+- Progress tracking with milestone updates
+- Evidence attachment system
+- Manager validation of achievements
+- Cross-cycle comparison and trends
+- Goal-performance correlation analysis
+
+## Complete Database Structure
+
+### AUTHENTICATION MODULE (Common Database)
+
+#### users_mst (Reference: user)
+- user_id (char 16, PK) - Unique user identifier
+- user_full_name (varchar 100) - User's full name
+- user_loginid (varchar 50, UK) - Login ID (email)
+- user_password (varchar 255) - Encrypted password (bcrypt)
+- user_email_id (varchar 100, UK) - User's email
+- user_role (varchar 50, default 'EMPLOYEE') - ADMIN, HR, MANAGER, TEAMLEAD, EMPLOYEE
+- user_role_type_id (char 16, FK role_mst) - Specific role type
+- user_dept_id (char 16, FK department_mst) - Department assignment
+- user_domain_id (char 16, FK domain_mst) - Work domain
+- user_project_id (char 16, FK project_mst) - Project assignment (nullable)
+- user_manager_id (char 16, FK users_mst) - Direct reporting manager
+- user_designation (varchar 100) - Job title
+- user_join_date (date) - Date of joining
+- user_skills (text) - Comma-separated skill IDs
+- user_phone (varchar 15) - Contact number
+- user_last_login (datetime) - Last login timestamp
+- user_profile_pic (varchar 500) - Profile picture path
+- user_is_active (varchar 3, default 'YES') - Active status
+- user_password_reset_token (varchar 255) - Password reset token
+- user_password_reset_expires (datetime) - Token expiry
+- created_by (varchar 16), created_on (datetime), modified_by (varchar 16), modified_on (datetime)
+
+#### role_mst (Reference: role)
+- role_id (char 16, PK) - Role unique identifier
+- role_name (varchar 50, UK) - Role name
+- role_code (varchar 20, UK) - Role code
+- entity_code (char 16, FK entity_mst) - Module/project entity
+- role_desc (varchar 200) - Role description
+- role_level (int 1, default 1) - Hierarchy level (1-5)
+- role_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### entity_mst (Reference: enty)
+- entity_id (char 16, PK) - Entity unique identifier
+- entity_name (varchar 100, UK) - Entity name (PMS, TOUR, CRM)
+- entity_code (varchar 20, UK) - Entity code
+- entity_desc (varchar 200) - Entity description
+- entity_database (varchar 100) - Database name
+- entity_api_url (varchar 500) - Base API URL
+- entity_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### org_mst (Reference: org)
+- org_id (char 16, PK) - Organization unique identifier
+- org_name (varchar 100) - Organization name
+- org_code (varchar 20, UK) - Organization code
+- org_working_hours (decimal 3,2, default 8.00) - Standard working hours
+- org_logo (varchar 500) - Organization logo path
+- org_address (text) - Organization address
+- org_contact_email (varchar 100) - Primary contact email
+- org_contact_phone (varchar 20) - Primary contact phone
+- org_website (varchar 200) - Organization website
+- org_desc (varchar 500) - Organization description
+- org_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### opr_mst (Reference: opr)
+- opr_id (char 16, PK) - Operating unit unique identifier
+- opr_name (varchar 100) - Operating unit name
+- opr_code (varchar 20, UK) - Operating unit code
+- org_id (char 16, FK org_mst) - Parent organization
+- opr_desc (varchar 200) - Description
+- opr_head_id (char 16, FK users_mst) - Operating unit head
+- opr_budget_code (varchar 50) - Budget allocation code
+- opr_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### department_mst (Reference: dept)
+- department_id (char 16, PK) - Department unique identifier
+- department_name (varchar 100) - Department name
+- department_code (varchar 20, UK) - Department code
+- department_org_id (char 16, FK org_mst) - Parent organization
+- department_opr_id (char 16, FK opr_mst) - Parent operating unit
+- department_desc (varchar 500) - Department description
+- department_head_id (char 16, FK users_mst) - Department head/manager
+- department_review_period (varchar 1, default 'Q') - Review period (M/Q/H/Y)
+- department_budget_code (varchar 50) - Budget allocation code
+- department_location (varchar 200) - Physical location
+- department_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### domain_mst (Reference: domn)
+- domain_id (char 16, PK) - Domain unique identifier
+- domain_name (varchar 100, UK) - Domain name (QA, Development, Marketing)
+- domain_code (varchar 20, UK) - Domain code (QA, DEV, MKT)
+- domain_desc (varchar 500) - Domain description
+- domain_skills (text) - Common skills (JSON)
+- domain_certifications (text) - Relevant certifications (JSON)
+- domain_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### project_mst (Reference: proj)
+- project_id (char 16, PK) - Project unique identifier
+- project_name (varchar 100) - Project name
+- project_code (varchar 20, UK) - Project code
+- project_desc (varchar 500) - Project description
+- department_id (char 16, FK department_mst) - Parent department
+- domain_id (char 16, FK domain_mst) - Primary domain
+- project_lead_id (char 16, FK users_mst) - Team lead
+- project_manager_id (char 16, FK users_mst) - Project manager
+- project_start_date (date) - Start date
+- project_end_date (date, default '9999-12-31') - End date
+- project_status (varchar 20, default 'ACTIVE') - ACTIVE, COMPLETED, ON_HOLD
+- project_priority (varchar 10, default 'MEDIUM') - LOW, MEDIUM, HIGH
+- project_budget (decimal 15,2, default 0.00) - Budget
+- project_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### user_sessions_trn (Reference: sess)
+- session_id (char 16, PK) - Session unique identifier
+- user_id (char 16, FK users_mst) - User identifier
+- session_token (varchar 255, UK) - JWT token
+- refresh_token (varchar 255, UK) - Refresh token
+- session_start (datetime, default CURRENT_TIMESTAMP) - Session start
+- session_expiry (datetime) - Session expiry
+- session_last_activity (datetime, default CURRENT_TIMESTAMP ON UPDATE) - Last activity
+- session_ip_address (varchar 45) - Client IP (IPv6 compatible)
+- session_user_agent (varchar 500) - Client user agent
+- session_device_type (varchar 20) - WEB, MOBILE, TABLET
+- session_is_active (varchar 3, default 'YES') - Active status
+- created_on (datetime, default CURRENT_TIMESTAMP)
+
+### PMS PROJECT DATABASE
+
+#### financial_year_mst (Reference: finy)
+- fin_yr_id (char 16, PK) - Financial year unique identifier
+- fin_yr_name (varchar 20, UK) - Financial year name (FY 2025-26)
+- fin_start_date (date) - Financial year start
+- fin_end_date (date) - Financial year end
+- fin_is_current (varchar 3, default 'NO') - Is current financial year
+- fin_is_closed (varchar 3, default 'NO') - Is closed
+- created_by, created_on, modified_by, modified_on
+
+#### review_cycle_mst (Reference: cycl)
+- cycle_id (char 16, PK) - Review cycle unique identifier
+- cycle_name (varchar 100, UK) - Cycle name (Q1 2025)
+- cycle_type (varchar 1, default 'Q') - Q/H/Y
+- fin_yr_id (char 16, FK financial_year_mst) - Financial year
+- cycle_start_date (date) - Cycle start
+- cycle_end_date (date) - Cycle end
+- review_start_date (date) - Review process start
+- review_end_date (date) - Review process end
+- self_assessment_deadline (date) - Self assessment deadline
+- r1_review_deadline (date) - R1 review deadline
+- r2_review_deadline (date) - R2 review deadline
+- cycle_status (varchar 20, default 'DRAFT') - DRAFT, ACTIVE, COMPLETED
+- cycle_is_current (varchar 3, default 'NO') - Is current active cycle
+- cycle_departments (json) - Included departments
+- cycle_projects (json) - Included projects
+- total_participants (int 5, default 0) - Total employees
+- completed_reviews (int 5, default 0) - Completed reviews count
+- created_by, created_on, modified_by, modified_on
+
+#### user_reviewer_mapping_dtl (Reference: urmp)
+- mapping_id (char 16, PK) - Mapping unique identifier
+- user_id (char 16, FK users_mst) - Employee being reviewed
+- reviewer_id (char 16, FK users_mst) - Reviewer (R1 or R2)
+- reviewer_level (int 1) - 1=R1(Team Lead), 2=R2(Manager)
+- reviewer_type (varchar 20, default 'DEFAULT') - DEFAULT, CUSTOM, TEMPORARY
+- assignment_reason (varchar 100, default 'AUTO_ASSIGNED') - Assignment reason
+- effective_from (date) - Mapping start date
+- effective_to (date, default '9999-12-31') - Mapping end date
+- is_active (varchar 3, default 'YES') - Active status
+- can_override (varchar 3, default 'YES') - Can be manually changed
+- created_by, created_on, modified_by, modified_on
+
+#### kra_mst (Reference: kra)
+- kra_id (char 16, PK) - KRA unique identifier
+- kra_name (varchar 200) - KRA name
+- kra_code (varchar 20, UK) - KRA code
+- kra_desc (text) - KRA description
+- domain_ids (text) - Comma-separated domain IDs
+- kra_category (varchar 30, default 'TECHNICAL') - TECHNICAL, BEHAVIORAL, PROFESSIONAL, LEADERSHIP
+- measurement_type (varchar 20, default 'RATING') - RATING, PERCENTAGE, COUNT, BINARY
+- min_score (int 2, default 1) - Minimum score
+- max_score (int 2, default 10) - Maximum score
+- default_weightage (int 3, default 10) - Default weightage %
+- evidence_required (varchar 50, default 'COMMENTS') - COMMENTS, DOCUMENTS, BOTH
+- is_measurable_external (varchar 3, default 'NO') - External tool measurement
+- external_source (varchar 100) - External data source name
+- kra_formula (text) - Calculation formula
+- kra_is_active (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### kra_template_mst (Reference: ktmp)
+- template_id (char 16, PK) - Template unique identifier
+- template_name (varchar 100) - Template name
+- template_code (varchar 20, UK) - Template code
+- template_desc (varchar 500) - Template description
+- domain_id (char 16, FK domain_mst) - Primary domain
+- applicable_departments (text) - JSON array of department IDs
+- applicable_projects (text) - JSON array of project IDs
+- applicable_roles (text) - JSON array of roles
+- template_version (varchar 20, default '1.0') - Template version
+- total_weightage (int 3, default 100) - Total weightage check
+- kra_count (int 2, default 0) - Number of KRAs
+- review_frequency (varchar 10, default 'QUARTERLY') - QUARTERLY, HALF_YEARLY, YEARLY
+- is_default (varchar 3, default 'NO') - Is default template
+- is_draft (varchar 3, default 'YES') - Draft status
+- effective_from (date) - Effective start date
+- effective_to (date, default '9999-12-31') - Effective end date
+- created_by, created_on, modified_by, modified_on
+
+#### kra_template_dtl (Reference: ktdt)
+- template_dtl_id (char 16, PK) - Template detail unique identifier
+- template_id (char 16, FK kra_template_mst) - Parent template
+- kra_id (char 16, FK kra_mst) - KRA assignment
+- kra_weightage (int 3) - KRA weightage in template
+- display_order (int 2, default 1) - Display sequence
+- is_mandatory (varchar 3, default 'YES') - Mandatory KRA flag
+- custom_min_score (int 2) - Override min score
+- custom_max_score (int 2) - Override max score
+- custom_description (text) - Template-specific description
+- target_description (text) - Achievement criteria
+- created_by, created_on, modified_by, modified_on
+
+#### user_template_assignment (Reference: uta)
+- assignment_id (char 16, PK) - Assignment unique identifier
+- user_id (char 16, FK users_mst) - Employee
+- template_id (char 16, FK kra_template_mst) - Assigned template
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- assigned_by (char 16, FK users_mst) - Who assigned
+- assignment_type (varchar 20, default 'AUTO') - AUTO, MANUAL, INHERITED
+- effective_from (date) - Assignment start date
+- effective_to (date, default '9999-12-31') - Assignment end date
+- is_active (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### score_weightage_mst (Reference: scwt)
+- score_weightage_id (char 16, PK) - Weightage unique identifier
+- score_review_level (int 1, default 2) - Review levels (1=R1 only, 2=R1+R2)
+- score_weightage_user (int 3, default 20) - Self assessment weightage %
+- score_weightage_manager (int 3, default 40) - R1 reviewer weightage %
+- score_weightage_dept_head (int 3, default 40) - R2 reviewer weightage %
+- weightage_name (varchar 100) - Configuration name
+- weightage_desc (varchar 200) - Description
+- is_default (varchar 3, default 'NO') - Is default weightage
+- applicable_roles (varchar 200) - Applicable role types
+- score_weightage_isactive (varchar 3, default 'YES') - Active status
+- created_by, created_on, modified_by, modified_on
+
+#### user_review_trn_hdr (Reference: urhd)
+- review_hdr_id (char 16, PK) - Review header unique identifier
+- user_id (char 16, FK users_mst) - Employee being reviewed
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- template_id (char 16, FK kra_template_mst) - KRA template used
+- department_id (char 16, FK department_mst) - Employee's department
+- project_id (char 16, FK project_mst) - Employee's project (nullable)
+- domain_id (char 16, FK domain_mst) - Employee's domain
+- r1_reviewer_id (char 16, FK users_mst) - R1 reviewer (Team Lead)
+- r2_reviewer_id (char 16, FK users_mst) - R2 reviewer (Manager)
+- r1_reviewer_type (varchar 20, default 'DEFAULT') - DEFAULT, CUSTOM
+- r2_reviewer_type (varchar 20, default 'DEFAULT') - DEFAULT, CUSTOM
+- self_assessment_status (varchar 20, default 'NOT_STARTED') - NOT_STARTED, IN_PROGRESS, COMPLETED
+- r1_review_status (varchar 20, default 'PENDING') - PENDING, IN_PROGRESS, COMPLETED, SKIPPED
+- r2_review_status (varchar 20, default 'PENDING') - PENDING, IN_PROGRESS, COMPLETED
+- overall_status (varchar 20, default 'DRAFT') - DRAFT, SELF_DONE, R1_DONE, R2_DONE, CALCULATED, PUBLISHED
+- self_submit_date (datetime) - Self assessment submission
+- r1_submit_date (datetime) - R1 review submission
+- r2_submit_date (datetime) - R2 review submission
+- calculation_date (datetime) - Final calculation timestamp
+- self_total_score (decimal 6,2) - Self assessment total
+- r1_total_score (decimal 6,2) - R1 review total
+- r2_total_score (decimal 6,2) - R2 review total
+- final_weighted_score (decimal 6,2) - Final calculated score
+- final_percentage (decimal 5,2) - Final percentage
+- performance_zone (varchar 10) - GREEN, YELLOW, RED
+- department_percentile (decimal 5,2) - Department percentile rank
+- organization_percentile (decimal 5,2) - Organization percentile rank
+- improvement_from_last (decimal 5,2) - Improvement % from last cycle
+- goals_summary (json) - Goals achieved/set data
+- development_summary (json) - Development areas identified
+- manager_recommendation (text) - Overall manager recommendation
+- created_by, created_on, modified_by, modified_on
+
+#### user_review_trn_dtl_enhanced (Reference: ureh) - ENHANCED WITH GOALS
+- review_dtl_id (char 16, PK) - Review detail unique identifier
+- review_hdr_id (char 16, FK user_review_trn_hdr) - Parent review header
+- template_dtl_id (char 16, FK kra_template_dtl) - KRA template detail
+- kra_id (char 16, FK kra_mst) - KRA (quick reference)
+- kra_name (varchar 200) - KRA name (denormalized)
+- kra_weightage (int 3) - KRA weightage (denormalized)
+- max_score (int 2, default 10) - Maximum possible score
+- **GOAL INTEGRATION (NEW SECTION)**
+- related_goals_count (int 2, default 0) - Number of related goals
+- related_goals_json (json) - Related goal IDs and progress
+- goal_achievement_impact (decimal 4,2, default 0) - Goal impact on KRA
+- goal_progress_summary (text) - Summary of related goal progress
+- **SELF ASSESSMENT DATA - ENHANCED**
+- self_rating (int 2) - Self rating (1-10)
+- self_calculated_score (decimal 5,2) - Calculated score
+- self_comments (text) - Self assessment comments
+- self_achievements (text) - Key achievements
+- self_goal_alignment (text) - How achievements align with goals
+- self_evidence_files (json) - Evidence files metadata
+- self_submit_timestamp (datetime) - Self submission time
+- **R1 REVIEW DATA - ENHANCED**
+- r1_rating (int 2) - R1 rating (1-10)
+- r1_calculated_score (decimal 5,2) - R1 calculated score
+- r1_comments (text) - R1 review comments
+- r1_goal_validation (text) - R1 validation of goal achievements
+- r1_goal_evidence_review (text) - R1 review of goal evidence
+- r1_strengths (text) - R1 identified strengths
+- r1_improvements (text) - R1 suggested improvements
+- r1_evidence_files (json) - R1 additional evidence
+- r1_development_notes (text) - R1 development recommendations
+- r1_submit_timestamp (datetime) - R1 submission time
+- **R2 REVIEW DATA - ENHANCED**
+- r2_rating (int 2) - R2 rating (1-10)
+- r2_calculated_score (decimal 5,2) - R2 calculated score
+- r2_comments (text) - R2 review comments
+- r2_goal_achievement_validation (text) - R2 validation of goal achievements
+- r2_goal_evidence_assessment (text) - R2 assessment of goal evidence
+- r2_strategic_notes (text) - R2 strategic observations
+- r2_career_guidance (text) - R2 career development guidance
+- r2_evidence_files (json) - R2 additional evidence
+- r2_final_recommendation (text) - R2 final recommendation
+- r2_next_cycle_goals (text) - R2 suggestions for next cycle goals
+- r2_submit_timestamp (datetime) - R2 submission time
+- **GOAL-KRA PERFORMANCE ANALYSIS**
+- goal_kra_alignment_score (decimal 3,2, default 0) - Goal-KRA alignment
+- goal_achievement_contribution (decimal 5,2, default 0) - Goal contribution to KRA
+- cross_cycle_improvement (decimal 5,2, default 0) - Improvement from previous cycle
+- **EXISTING FIELDS**
+- external_metrics (json) - External tool data
+- peer_feedback (json) - Peer feedback
+- modification_history (json) - Changes log
+- calibration_notes (text) - Calibration session notes
+- dispute_flag (varchar 3, default 'NO') - Employee dispute flag
+- dispute_reason (text) - Dispute reason
+- created_by, created_on, modified_by, modified_on
+
+### ENHANCED GOAL MANAGEMENT TABLES
+
+#### goal_categories_mst (Reference: gcat) - NEW
+- category_id (char 16, PK) - Goal category unique identifier
+- category_name (varchar 100, UK) - Category name (Technical, Professional, Personal, Leadership)
+- category_code (varchar 20, UK) - Category code (TECH, PROF, PERS, LEAD)
+- category_desc (varchar 500) - Category description
+- domain_id (char 16, FK domain_mst) - Related domain (optional)
+- category_color (varchar 10, default '#3498db') - Display color for UI
+- is_kra_linked (varchar 3, default 'NO') - Can be linked to specific KRAs
+- requires_evidence (varchar 3, default 'YES') - Evidence required for achievement
+- is_active (varchar 3, default 'YES') - Category active status
+- created_by, created_on, modified_by, modified_on
+
+#### goal_templates_mst (Reference: gtmp) - NEW
+- template_id (char 16, PK) - Template unique identifier
+- template_name (varchar 200) - Template name
+- template_desc (text) - Template description
+- category_id (char 16, FK goal_categories_mst) - Goal category
+- domain_id (char 16, FK domain_mst) - Applicable domain
+- department_id (char 16, FK department_mst) - Applicable department (optional)
+- target_type (varchar 20, default 'NUMERIC') - NUMERIC, PERCENTAGE, BOOLEAN, TEXT
+- measurement_unit (varchar 50) - Unit of measurement (hours, count, %)
+- default_target_value (varchar 100) - Default target value
+- success_criteria (text) - What constitutes achievement
+- evidence_requirements (text) - Required evidence for validation
+- is_public (varchar 3, default 'YES') - Visible to other employees
+- usage_count (int 5, default 0) - Times used
+- is_active (varchar 3, default 'YES') - Template active status
+- created_by, created_on, modified_by, modified_on
+
+#### user_goals_enhanced (Reference: ugeh) - ENHANCED VERSION
+- goal_id (char 16, PK) - Goal unique identifier
+- user_id (char 16, FK users_mst) - Goal owner user ID
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- template_id (char 16, FK goal_templates_mst) - Goal template used (optional)
+- category_id (char 16, FK goal_categories_mst) - Goal category
+- kra_id (char 16, FK kra_mst) - Linked KRA (optional)
+- goal_title (varchar 200) - Goal title
+- goal_description (text) - Detailed goal description
+- goal_type (varchar 20, default 'INDIVIDUAL') - INDIVIDUAL, TEAM, DEPARTMENT, PROJECT
+- priority_level (varchar 10, default 'MEDIUM') - LOW, MEDIUM, HIGH, CRITICAL
+- target_value (varchar 100) - Target value/metric
+- target_unit (varchar 50) - Unit of measurement
+- current_value (varchar 100, default '0') - Current achieved value
+- progress_percentage (decimal 5,2, default 0.00) - Progress percentage (0-100)
+- target_date (date) - Target completion date
+- start_date (date) - Goal start date
+- completion_date (date) - Actual completion date
+- goal_status (varchar 20, default 'ACTIVE') - ACTIVE, COMPLETED, CANCELLED, ON_HOLD
+- achievement_level (varchar 20) - EXCEEDED, ACHIEVED, PARTIALLY_ACHIEVED, NOT_ACHIEVED
+- goal_weightage (int 3, default 10) - Goal importance weightage
+- is_stretch_goal (varchar 3, default 'NO') - Is stretch/aspirational goal
+- is_visible_in_review (varchar 3, default 'YES') - Show in review matrix
+- manager_approved (varchar 3, default 'NO') - Manager approval status
+- approved_by (char 16, FK users_mst) - Approving manager ID
+- approved_on (datetime) - Approval timestamp
+- success_criteria (text) - Success criteria definition
+- evidence_requirements (text) - Evidence requirements
+- quarterly_targets (json) - Q1, Q2, Q3, Q4 milestone targets
+- linked_goals (text) - Related/dependent goal IDs
+- created_by, created_on, modified_by, modified_on
+
+#### goal_progress_tracking (Reference: gptr) - NEW
+- tracking_id (char 16, PK) - Tracking record unique identifier
+- goal_id (char 16, FK user_goals_enhanced) - Goal being tracked
+- user_id (char 16, FK users_mst) - User who updated progress
+- update_date (date) - Progress update date
+- previous_value (varchar 100) - Previous progress value
+- current_value (varchar 100) - Updated progress value
+- progress_percentage (decimal 5,2) - Progress percentage at update
+- milestone_achieved (varchar 200) - Milestone achieved (if any)
+- update_comments (text) - Progress update comments
+- evidence_provided (varchar 3, default 'NO') - Evidence provided with update
+- evidence_description (text) - Description of evidence
+- challenges_faced (text) - Challenges encountered
+- next_steps (text) - Next steps planned
+- manager_reviewed (varchar 3, default 'NO') - Manager reviewed this update
+- manager_comments (text) - Manager feedback on progress
+- created_on (datetime, default CURRENT_TIMESTAMP) - Update timestamp
+
+#### goal_evidence_attachments (Reference: geat) - NEW
+- attachment_id (char 16, PK) - Attachment unique identifier
+- goal_id (char 16, FK user_goals_enhanced) - Related goal
+- tracking_id (char 16, FK goal_progress_tracking) - Related progress update (optional)
+- uploaded_by (char 16, FK users_mst) - User who uploaded
+- file_name (varchar 255) - Original file name
+- file_path (varchar 500) - Storage path
+- file_size (bigint) - File size in bytes
+- file_type (varchar 100) - File MIME type
+- evidence_type (varchar 50) - DOCUMENT, IMAGE, VIDEO, CERTIFICATE, REPORT
+- evidence_description (text) - Evidence description
+- milestone_reference (varchar 100) - Which milestone this proves
+- validation_status (varchar 20, default 'PENDING') - PENDING, VALIDATED, REJECTED
+- validated_by (char 16, FK users_mst) - Reviewer who validated
+- validation_date (datetime) - Validation timestamp
+- validation_comments (text) - Validation feedback
+- is_final_evidence (varchar 3, default 'NO') - Final goal completion evidence
+- upload_date (datetime, default CURRENT_TIMESTAMP) - Upload timestamp
+
+#### goal_achievement_history (Reference: gahi) - NEW
+- history_id (char 16, PK) - History record unique identifier
+- user_id (char 16, FK users_mst) - Employee ID
+- goal_id (char 16, FK user_goals_enhanced) - Goal ID
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- **GOAL SNAPSHOT DATA**
+- goal_title (varchar 200) - Goal title at completion
+- goal_category (varchar 100) - Goal category
+- target_value (varchar 100) - Original target
+- achieved_value (varchar 100) - Final achieved value
+- achievement_percentage (decimal 5,2) - Achievement percentage
+- achievement_level (varchar 20) - EXCEEDED, ACHIEVED, PARTIALLY_ACHIEVED, NOT_ACHIEVED
+- **REVIEW INTEGRATION**
+- visible_in_self_review (varchar 3, default 'YES') - Shown in self assessment
+- visible_in_r1_review (varchar 3, default 'YES') - Shown in R1 review
+- visible_in_r2_review (varchar 3, default 'YES') - Shown in R2 review
+- self_achievement_rating (int 2) - Employee's self-rating of achievement
+- r1_achievement_validation (int 2) - R1's validation of achievement
+- r2_achievement_validation (int 2) - R2's validation of achievement
+- self_comments (text) - Employee comments on achievement
+- r1_comments (text) - R1 comments on goal achievement
+- r2_comments (text) - R2 comments on goal achievement
+- **EVIDENCE & VALIDATION**
+- evidence_count (int 3, default 0) - Number of evidence files
+- evidence_quality_rating (int 1) - 1-5 rating of evidence quality
+- manager_validated (varchar 3, default 'NO') - Manager validated achievement
+- validation_date (datetime) - Validation timestamp
+- impact_description (text) - Impact/outcome of goal achievement
+- lessons_learned (text) - Lessons learned from this goal
+- **NEXT CYCLE INFLUENCE**
+- influenced_next_goal (char 16, FK user_goals_enhanced) - Goal created based on this
+- improvement_areas (text) - Areas for improvement next cycle
+- recommended_next_steps (text) - Recommendations for next goals
+- **TIMESTAMPS**
+- goal_start_date (date) - Goal start date
+- goal_completion_date (date) - Goal completion date
+- days_to_complete (int 4) - Days taken to complete
+- archived_on (datetime, default CURRENT_TIMESTAMP) - When moved to history
+- created_by (varchar 16) - Creator user ID
+
+#### goal_kra_mapping (Reference: gkmp) - NEW
+- mapping_id (char 16, PK) - Mapping unique identifier
+- goal_id (char 16, FK user_goals_enhanced) - Goal ID
+- kra_id (char 16, FK kra_mst) - KRA ID
+- template_dtl_id (char 16, FK kra_template_dtl) - Specific KRA in template
+- mapping_type (varchar 20, default 'DIRECT') - DIRECT, SUPPORTIVE, INDIRECT
+- contribution_percentage (int 3, default 100) - How much goal contributes to KRA
+- is_primary_goal (varchar 3, default 'YES') - Primary goal for this KRA
+- mapping_description (text) - How goal relates to KRA
+- created_by, created_on
+
+#### review_goal_integration (Reference: rgin) - NEW
+- integration_id (char 16, PK) - Integration record unique identifier
+- review_dtl_id (char 16, FK user_review_trn_dtl_enhanced) - Review detail (KRA)
+- goal_id (char 16, FK user_goals_enhanced) - Related goal
+- goal_visible_to_self (varchar 3, default 'YES') - Goal visible in self assessment
+- goal_visible_to_r1 (varchar 3, default 'YES') - Goal visible in R1 review
+- goal_visible_to_r2 (varchar 3, default 'YES') - Goal visible in R2 review
+- goal_progress_display (varchar 20, default 'PERCENTAGE') - PERCENTAGE, VALUE, MILESTONE
+- goal_achievement_impact (int 2, default 0) - Impact on KRA rating (-10 to +10)
+- display_order (int 2, default 1) - Display order in review matrix
+- created_by, created_on
+
+#### goal_analytics_summary (Reference: gasu) - NEW
+- summary_id (char 16, PK) - Summary unique identifier
+- user_id (char 16, FK users_mst) - Employee ID
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- department_id (char 16, FK department_mst) - Department
+- project_id (char 16, FK project_mst) - Project (optional)
+- **GOAL STATISTICS**
+- total_goals_set (int 3, default 0) - Total goals set for cycle
+- goals_completed (int 3, default 0) - Goals completed
+- goals_exceeded (int 3, default 0) - Goals exceeded target
+- goals_partially_achieved (int 3, default 0) - Goals partially achieved
+- goals_not_achieved (int 3, default 0) - Goals not achieved
+- overall_achievement_rate (decimal 5,2) - Overall achievement percentage
+- **CATEGORY BREAKDOWN**
+- technical_goals_rate (decimal 5,2) - Technical goals achievement rate
+- professional_goals_rate (decimal 5,2) - Professional goals achievement rate
+- personal_goals_rate (decimal 5,2) - Personal goals achievement rate
+- leadership_goals_rate (decimal 5,2) - Leadership goals achievement rate
+- **EVIDENCE & VALIDATION**
+- total_evidence_files (int 4, default 0) - Total evidence files submitted
+- validated_evidence_count (int 4, default 0) - Evidence files validated
+- evidence_quality_average (decimal 3,2) - Average evidence quality rating
+- manager_validation_rate (decimal 5,2) - Manager validation rate
+- **PERFORMANCE CORRELATION**
+- performance_score (decimal 5,2) - Overall performance score
+- goal_performance_correlation (decimal 4,3) - Correlation coefficient (-1 to 1)
+- high_achiever_flag (varchar 3, default 'NO') - High goal achiever flag
+- consistent_achiever_flag (varchar 3, default 'NO') - Consistent across cycles
+- **TRENDS & INSIGHTS**
+- improvement_trend (varchar 10) - IMPROVING, DECLINING, STABLE
+- goal_setting_quality (varchar 10) - EXCELLENT, GOOD, AVERAGE, POOR
+- evidence_submission_timeliness (varchar 10) - EARLY, ON_TIME, LATE
+- manager_engagement_level (varchar 10) - HIGH, MEDIUM, LOW
+- calculated_on, created_on, updated_on
+
+### OTHER SUPPORTING TABLES
+
+#### review_comments_trn (Reference: rcmt)
+- comment_id (char 16, PK) - Comment unique identifier
+- review_dtl_id (char 16, FK user_review_trn_dtl_enhanced) - Parent review detail
+- reviewer_id (char 16, FK users_mst) - Commenter user ID
+- reviewer_level (int 1) - Reviewer level (0=Self, 1=R1, 2=R2)
+- comment_type (varchar 20, default 'GENERAL') - Comment type
+- comment_text (text) - Comment content
+- is_private (varchar 3, default 'NO') - Is private comment
+- parent_comment_id (char 16, FK review_comments_trn) - Parent comment for threading
+- created_by, created_on
+
+#### review_attachments_trn (Reference: ratt)
+- attachment_id (char 16, PK) - Attachment unique identifier
+- review_dtl_id (char 16, FK user_review_trn_dtl_enhanced) - Parent review detail
+- reviewer_id (char 16, FK users_mst) - Uploader user ID
+- reviewer_level (int 1) - Reviewer level (0=Self, 1=R1, 2=R2)
+- file_name (varchar 255) - Original file name
+- file_path (varchar 500) - File storage path
+- file_size (bigint) - File size in bytes
+- file_type (varchar 50) - File MIME type
+- file_description (text) - File description
+- upload_date (datetime, default CURRENT_TIMESTAMP) - Upload timestamp
+- is_evidence (varchar 3, default 'YES') - Is evidence file
+
+#### user_performance_summary (Reference: uprf)
+- summary_id (char 16, PK) - Summary unique identifier
+- user_id (char 16, FK users_mst) - Employee ID
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- **DENORMALIZED USER DATA**
+- user_name (varchar 100) - Employee name (denormalized)
+- user_email (varchar 100) - Employee email (denormalized)
+- department_id (char 16) - Department ID
+- department_name (varchar 100) - Department name (denormalized)
+- project_id (char 16) - Project ID
+- project_name (varchar 100) - Project name (denormalized)
+- domain_id (char 16) - Domain ID
+- domain_name (varchar 100) - Domain name (denormalized)
+- manager_id (char 16) - Manager ID
+- manager_name (varchar 100) - Manager name (denormalized)
+- **PERFORMANCE DATA**
+- final_score (decimal 6,2) - Final weighted score
+- final_percentage (decimal 5,2) - Final percentage
+- performance_zone (varchar 10) - GREEN/YELLOW/RED
+- department_rank (int 4) - Rank in department
+- organization_rank (int 5) - Rank in organization
+- department_percentile (decimal 5,2) - Department percentile
+- organization_percentile (decimal 5,2) - Organization percentile
+- **KRA BREAKDOWN**
+- kra_scores_json (json) - Detailed KRA scores
+- top_performing_kra (varchar 200) - Best performing KRA
+- lowest_performing_kra (varchar 200) - Needs improvement KRA
+- **TRENDS**
+- previous_cycle_score (decimal 6,2) - Last cycle score
+- score_improvement (decimal 5,2) - Score change
+- trend_direction (varchar 10) - UP/DOWN/STABLE
+- consecutive_improvements (int 2, default 0) - Streak of improvements
+- **GOALS & DEVELOPMENT**
+- goals_set (int 2, default 0) - Goals set count
+- goals_achieved (int 2, default 0) - Goals achieved count
+- goal_achievement_rate (decimal 5,2) - Achievement percentage
+- development_hours (decimal 5,2, default 0) - Training hours
+- certifications_earned (int 2, default 0) - Certifications count
+- calculated_on, created_on, updated_on
+
+#### system_notifications_trn (Reference: sntf)
+- notification_id (char 16, PK) - Notification unique identifier
+- user_id (char 16, FK users_mst) - Target user
+- notification_type (varchar 50) - Notification type
+- notification_title (varchar 200) - Notification title
+- notification_message (text) - Notification message
+- notification_status (varchar 20, default 'UNREAD') - Read status
+- related_entity_type (varchar 50) - Related entity type
+- related_entity_id (char 16) - Related entity ID
+- priority_level (varchar 10, default 'NORMAL') - Priority level
+- send_email (varchar 3, default 'NO') - Send email flag
+- email_sent_date (datetime) - Email sent timestamp
+- scheduled_date (datetime) - Scheduled delivery time
+- created_on, read_on
+
+### PERFORMANCE ZONE & ANALYTICS TABLES
+
+#### performance_zone_config_mst (Reference: pzc)
+- zone_config_id (char 16, PK) - Zone configuration unique identifier
+- config_name (varchar 100) - Configuration name
+- config_type (varchar 20, default 'ORGANIZATION') - ORGANIZATION, DEPARTMENT, PROJECT
+- applicable_to (varchar 200) - Comma-separated IDs (dept/project IDs)
+- zone_calculation_method (varchar 20, default 'PERCENTILE') - PERCENTILE, PERCENTAGE, ABSOLUTE_SCORE
+- **GREEN ZONE SETTINGS**
+- green_zone_name (varchar 50, default 'Green Zone') - Display name
+- green_zone_color (varchar 10, default '#10B981') - Hex color code
+- green_zone_min_percentile (decimal 5,2, default 75) - Min percentile for green
+- green_zone_max_percentile (decimal 5,2, default 100) - Max percentile for green
+- green_zone_min_percentage (decimal 5,2, default 80) - Min percentage score
+- green_zone_max_percentage (decimal 5,2, default 100) - Max percentage score
+- green_zone_min_score (decimal 6,2, default 80) - Min absolute score
+- green_zone_max_score (decimal 6,2, default 100) - Max absolute score
+- green_zone_description (text) - Description for green zone
+- **YELLOW ZONE SETTINGS**
+- yellow_zone_name (varchar 50, default 'Yellow Zone') - Display name
+- yellow_zone_color (varchar 10, default '#F59E0B') - Hex color code
+- yellow_zone_min_percentile (decimal 5,2, default 25) - Min percentile
+- yellow_zone_max_percentile (decimal 5,2, default 74.99) - Max percentile
+- yellow_zone_min_percentage (decimal 5,2, default 50) - Min percentage score
+- yellow_zone_max_percentage (decimal 5,2, default 79.99) - Max percentage score
+- yellow_zone_min_score (decimal 6,2, default 50) - Min absolute score
+- yellow_zone_max_score (decimal 6,2, default 79.99) - Max absolute score
+- yellow_zone_description (text) - Description for yellow zone
+- **RED ZONE SETTINGS**
+- red_zone_name (varchar 50, default 'Red Zone') - Display name
+- red_zone_color (varchar 10, default '#EF4444') - Hex color code
+- red_zone_min_percentile (decimal 5,2, default 0) - Min percentile
+- red_zone_max_percentile (decimal 5,2, default 24.99) - Max percentile
+- red_zone_min_percentage (decimal 5,2, default 0) - Min percentage score
+- red_zone_max_percentage (decimal 5,2, default 49.99) - Max percentage score
+- red_zone_min_score (decimal 6,2, default 0) - Min absolute score
+- red_zone_max_score (decimal 6,2, default 49.99) - Max absolute score
+- red_zone_description (text) - Description for red zone
+- **CONFIGURATION SETTINGS**
+- is_default (varchar 3, default 'NO') - Is default configuration
+- effective_from (date) - Configuration effective from
+- effective_to (date, default '9999-12-31') - Configuration effective to
+- auto_assign_zones (varchar 3, default 'YES') - Auto-assign zones after calculation
+- require_manager_approval (varchar 3, default 'NO') - Require manager approval
+- send_zone_notifications (varchar 3, default 'YES') - Send notifications
+- is_active (varchar 3, default 'YES') - Configuration active status
+- created_by, created_on, modified_by, modified_on
+
+#### zone_assignment_log (Reference: zal)
+- assignment_id (char 16, PK) - Assignment unique identifier
+- user_id (char 16, FK users_mst) - Employee ID
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- review_hdr_id (char 16, FK user_review_trn_hdr) - Review header
+- zone_config_id (char 16, FK performance_zone_config_mst) - Zone configuration used
+- **ZONE ASSIGNMENT**
+- assigned_zone (varchar 10) - GREEN, YELLOW, RED
+- assignment_method (varchar 20, default 'AUTO') - AUTO, MANUAL, OVERRIDE
+- assignment_reason (text) - Reason for assignment
+- **CALCULATION BASIS**
+- final_score (decimal 6,2) - Final weighted score
+- final_percentage (decimal 5,2) - Final percentage
+- department_percentile (decimal 5,2) - Department percentile rank
+- organization_percentile (decimal 5,2) - Organization percentile rank
+- **ZONE THRESHOLDS USED**
+- zone_calculation_method (varchar 20) - Method used for calculation
+- threshold_values (json) - Actual threshold values used
+- **CHANGE TRACKING**
+- previous_zone (varchar 10) - Previous zone if any
+- zone_change_type (varchar 10) - UP, DOWN, SAME, NEW
+- manager_approved (varchar 3) - Manager approval if required
+- manager_comments (text) - Manager comments on zone
+- notification_sent (varchar 3, default 'NO') - Notification sent to employee
+- **TIMESTAMPS**
+- assigned_on (datetime, default CURRENT_TIMESTAMP) - Assignment timestamp
+- effective_from (date) - Zone effective from
+- effective_to (date, default '9999-12-31') - Zone effective to
+- created_by (varchar 16) - Creator user ID
+
+#### user_performance_history (Reference: uph)
+- history_id (char 16, PK) - History record unique identifier
+- user_id (char 16, FK users_mst) - Employee ID
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- review_hdr_id (char 16, FK user_review_trn_hdr) - Original review header
+- **SNAPSHOT DATA - DENORMALIZED**
+- user_name (varchar 100) - Employee name at time of review
+- user_email (varchar 100) - Employee email at time of review
+- user_designation (varchar 100) - Designation at time of review
+- department_id (char 16) - Department at time of review
+- department_name (varchar 100) - Department name at time of review
+- project_id (char 16) - Project at time of review
+- project_name (varchar 100) - Project name at time of review
+- domain_id (char 16) - Domain at time of review
+- domain_name (varchar 100) - Domain name at time of review
+- manager_id (char 16) - Manager at time of review
+- manager_name (varchar 100) - Manager name at time of review
+- **REVIEW CYCLE INFO**
+- cycle_name (varchar 100) - Cycle name (Q1 2025)
+- cycle_year (int 4) - Review year
+- cycle_quarter (int 1) - Quarter (1,2,3,4)
+- cycle_type (varchar 20) - QUARTERLY, HALF_YEARLY, YEARLY
+- review_period_start (date) - Performance period start
+- review_period_end (date) - Performance period end
+- **PERFORMANCE SCORES**
+- self_total_score (decimal 6,2) - Self assessment total
+- r1_total_score (decimal 6,2) - R1 review total
+- r2_total_score (decimal 6,2) - R2 review total
+- final_weighted_score (decimal 6,2) - Final calculated score
+- final_percentage (decimal 5,2) - Final percentage
+- **ZONE & RANKING**
+- performance_zone (varchar 10) - GREEN, YELLOW, RED
+- zone_config_used (char 16) - Zone configuration used
+- department_rank (int 4) - Rank in department
+- organization_rank (int 5) - Rank in organization
+- department_percentile (decimal 5,2) - Department percentile
+- organization_percentile (decimal 5,2) - Organization percentile
+- total_participants_dept (int 4) - Total dept participants
+- total_participants_org (int 5) - Total org participants
+- **KRA BREAKDOWN**
+- template_id (char 16) - KRA template used
+- template_name (varchar 100) - Template name
+- kra_scores_json (json) - Detailed KRA scores
+- kra_count (int 2) - Number of KRAs
+- top_performing_kra (varchar 200) - Best KRA
+- lowest_performing_kra (varchar 200) - Weakest KRA
+- **GOALS & ACHIEVEMENTS**
+- goals_set (int 2, default 0) - Goals set for period
+- goals_achieved (int 2, default 0) - Goals achieved
+- goal_achievement_rate (decimal 5,2) - Achievement percentage
+- key_achievements (text) - Major achievements
+- development_areas (text) - Areas needing development
+- training_completed (text) - Training/certifications
+- **FEEDBACK SUMMARY**
+- manager_overall_feedback (text) - Manager's summary feedback
+- career_recommendations (text) - Career guidance provided
+- next_quarter_focus (text) - Focus areas for next period
+- **COMPARISON DATA**
+- previous_cycle_score (decimal 6,2) - Previous cycle score
+- score_change (decimal 5,2) - Score improvement/decline
+- zone_change (varchar 20) - Zone movement (UP/DOWN/SAME)
+- rank_change (int 3) - Rank change
+- **TIMESTAMPS**
+- review_completion_date (datetime) - When review was completed
+- archived_on (datetime, default CURRENT_TIMESTAMP) - When moved to history
+- created_by (varchar 16) - Creator user ID
+
+### REVIEW SCHEDULING & AUTOMATION TABLES
+
+#### review_schedule_mst (Reference: rsm)
+- schedule_id (char 16, PK) - Schedule unique identifier
+- schedule_name (varchar 100) - Schedule name (Annual Reviews 2025)
+- schedule_description (text) - Detailed description of schedule
+- schedule_type (varchar 20, default 'RECURRING') - RECURRING, ONE_TIME
+- recurrence_pattern (varchar 20, default 'QUARTERLY') - QUARTERLY, HALF_YEARLY, YEARLY, CUSTOM
+- **CYCLE GENERATION SETTINGS**
+- base_year (int 4) - Starting year (2025)
+- cycles_to_generate (int 2, default 4) - Number of cycles to create
+- cycle_duration_months (int 2, default 3) - Duration of each cycle
+- **TIMELINE SETTINGS**
+- review_duration_days (int 3, default 30) - Days for review process
+- self_assessment_days (int 2, default 10) - Days for self assessment
+- r1_review_days (int 2, default 10) - Days for R1 review
+- r2_review_days (int 2, default 10) - Days for R2 review
+- grace_period_days (int 2, default 5) - Grace period after deadline
+- **NOTIFICATION SETTINGS**
+- send_reminder_notifications (varchar 3, default 'YES') - Send automatic reminders
+- reminder_days_before (varchar 20, default '7,3,1') - Comma-separated reminder days
+- send_escalation_alerts (varchar 3, default 'YES') - Send escalation alerts
+- escalation_days_after (int 2, default 2) - Days after deadline to escalate
+- **SCOPE SETTINGS**
+- included_departments (json) - Departments included in schedule
+- included_projects (json) - Projects included in schedule
+- included_roles (json) - Roles included in schedule
+- excluded_users (json) - Users excluded from schedule
+- **AUTO-GENERATION SETTINGS**
+- auto_create_cycles (varchar 3, default 'YES') - Auto-create review cycles
+- auto_assign_templates (varchar 3, default 'YES') - Auto-assign KRA templates
+- auto_assign_reviewers (varchar 3, default 'YES') - Auto-assign R1/R2 reviewers
+- auto_calculate_zones (varchar 3, default 'YES') - Auto-calculate performance zones
+- **STATUS & CONTROL**
+- schedule_status (varchar 20, default 'DRAFT') - DRAFT, ACTIVE, PAUSED, COMPLETED
+- next_generation_date (date) - When to create next cycle
+- last_generated_cycle (char 16) - Last generated cycle ID
+- is_active (varchar 3, default 'YES') - Schedule active status
+- created_by, created_on, modified_by, modified_on
+
+#### review_schedule_timeline (Reference: rst)
+- timeline_id (char 16, PK) - Timeline unique identifier
+- schedule_id (char 16, FK review_schedule_mst) - Parent schedule
+- cycle_id (char 16, FK review_cycle_mst) - Generated cycle
+- **PHASE DEFINITIONS**
+- performance_period_start (date) - Performance measurement start
+- performance_period_end (date) - Performance measurement end
+- review_open_date (date) - Review process opens
+- self_assessment_start (date) - Self assessment starts
+- self_assessment_end (date) - Self assessment deadline
+- r1_review_start (date) - R1 review starts
+- r1_review_end (date) - R1 review deadline
+- r2_review_start (date) - R2 review starts
+- r2_review_end (date) - R2 review deadline
+- calculation_date (date) - Score calculation date
+- results_publish_date (date) - Results publication date
+- feedback_discussion_start (date) - Discussion period starts
+- feedback_discussion_end (date) - Discussion period ends
+- cycle_close_date (date) - Cycle closure date
+- **REMINDER SCHEDULE**
+- reminders_json (json) - Detailed reminder schedule
+- escalation_schedule (json) - Escalation timeline
+- **STATUS TRACKING**
+- timeline_status (varchar 20, default 'SCHEDULED') - SCHEDULED, ACTIVE, COMPLETED
+- actual_completion_date (date) - Actual completion
+- created_by, created_on
+
+#### review_reminder_queue (Reference: rrq)
+- reminder_id (char 16, PK) - Reminder unique identifier
+- user_id (char 16, FK users_mst) - Target user
+- review_hdr_id (char 16, FK user_review_trn_hdr) - Review header
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- reminder_type (varchar 30) - SELF_DUE, R1_DUE, R2_DUE, OVERDUE, ESCALATION
+- reminder_stage (varchar 20) - Stage in review process
+- scheduled_date (datetime) - When to send reminder
+- sent_date (datetime) - When reminder was sent
+- reminder_status (varchar 20, default 'PENDING') - PENDING, SENT, FAILED
+- reminder_message (text) - Reminder message content
+- escalation_level (int 1, default 0) - Escalation level (0-3)
+- send_email (varchar 3, default 'YES') - Send email notification
+- send_sms (varchar 3, default 'NO') - Send SMS notification
+- created_by, created_on
+
+#### review_escalation_log (Reference: rel)
+- escalation_id (char 16, PK) - Escalation unique identifier
+- user_id (char 16, FK users_mst) - Employee with delayed review
+- review_hdr_id (char 16, FK user_review_trn_hdr) - Review header
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- escalated_to_user_id (char 16, FK users_mst) - Manager/Admin escalated to
+- escalation_type (varchar 30) - SELF_OVERDUE, R1_OVERDUE, R2_OVERDUE
+- escalation_level (int 1, default 1) - Escalation level (1-3)
+- days_overdue (int 3) - Days past deadline
+- escalation_reason (text) - Reason for escalation
+- escalation_date (datetime, default CURRENT_TIMESTAMP) - When escalation was created
+- resolution_date (datetime) - When escalation was resolved
+- resolution_action (text) - Action taken to resolve
+- escalation_status (varchar 20, default 'ACTIVE') - ACTIVE, RESOLVED, CLOSED
+- created_by, created_on
+
+#### review_goal_display_config (Reference: rgdc) - NEW
+- config_id (char 16, PK) - Configuration unique identifier
+- cycle_id (char 16, FK review_cycle_mst) - Review cycle
+- template_id (char 16, FK kra_template_mst) - KRA template
+- goal_display_enabled (varchar 3, default 'YES') - Show goals in review matrix
+- goal_progress_format (varchar 20, default 'PERCENTAGE') - PERCENTAGE, BAR, NUMERIC, TEXT
+- show_goal_history (varchar 3, default 'YES') - Show previous cycle goals
+- show_goal_evidence (varchar 3, default 'YES') - Show goal evidence links
+- goal_achievement_weight (decimal 3,2, default 0.2) - Weight in final KRA score
+- require_goal_comments (varchar 3, default 'NO') - Require comments on goal progress
+- allow_goal_updates (varchar 3, default 'YES') - Allow goal updates during review
+- max_goals_per_kra (int 2, default 3) - Maximum goals to display per KRA
+- created_by, created_on, modified_by, modified_on
+
+#### cross_cycle_goal_analysis (Reference: ccga) - NEW
+- analysis_id (char 16, PK) - Analysis unique identifier
+- user_id (char 16, FK users_mst) - Employee ID
+- current_cycle_id (char 16, FK review_cycle_mst) - Current cycle
+- previous_cycle_id (char 16, FK review_cycle_mst) - Previous cycle
+- goal_category_id (char 16, FK goal_categories_mst) - Goal category
+- **ACHIEVEMENT COMPARISON**
+- previous_goals_count (int 3, default 0) - Goals in previous cycle
+- previous_achieved_count (int 3, default 0) - Goals achieved in previous cycle
+- previous_achievement_rate (decimal 5,2, default 0) - Previous cycle achievement rate
+- current_goals_count (int 3, default 0) - Goals in current cycle
+- current_achieved_count (int 3, default 0) - Goals achieved in current cycle
+- current_achievement_rate (decimal 5,2, default 0) - Current cycle achievement rate
+- improvement_percentage (decimal 5,2, default 0) - Improvement from previous cycle
+- **GOAL QUALITY ANALYSIS**
+- goal_complexity_trend (varchar 15) - INCREASING, DECREASING, STABLE
+- evidence_quality_trend (varchar 15) - IMPROVING, DECLINING, STABLE
+- goal_alignment_improvement (decimal 5,2, default 0) - Better KRA alignment score
+- **INSIGHTS & RECOMMENDATIONS**
+- strength_areas (text) - Goal categories where user excels
+- improvement_areas (text) - Goal categories needing attention
+- recommended_goal_types (text) - Recommended goals for next cycle
+- coaching_recommendations (text) - Manager coaching recommendations
+- analysis_date, created_by, created_on
+
+## Complete Flow Process (15 Steps)
+
+### Phase 1: System Setup & Initial Goal Planning
+
+#### Step 1: Admin/HR - System Setup
+**Who:** Admin/HR  
+**When:** Before review cycle starts  
+**Menu Path:** 
+- Masters → Department Master
+- Masters → Domain Master  
+- Masters → Project Master
+- User Management → User Operations
+- User Management → Reviewer Mapping
+- KRA Management → KRA Library
+- KRA Management → Project-KRA Mapping
+- System Settings → General Configuration
+
+**Actions:**
+1. Create organization structure (Org → Operating Units → Departments → Projects)
+2. Define work domains (QA, Development, Marketing, Finance, HR)
+3. Create user accounts with department, domain, and project assignments
+4. Setup R1 (Team Lead) and R2 (Manager) reviewer mappings for each employee
+5. Build comprehensive KRA library with domain-specific performance criteria
+6. Create KRA templates for different projects and domains
+7. Configure performance zones (Green ≥75%, Yellow 25-75%, Red <25%)
+8. Set up weightage configurations (Self: 20%, R1: 40%, R2: 40%)
+
+**Database Tables Used:**
+- org_mst, opr_mst, department_mst, domain_mst, project_mst
+- users_mst, role_mst, user_reviewer_mapping_dtl
+- kra_mst, kra_template_mst, kra_template_dtl
+- performance_zone_config_mst, score_weightage_mst
+
+#### Step 2: Admin/HR - Review Cycle & Enhanced Goal Setup
+**Who:** Admin/HR  
+**When:** At the beginning of each review period  
+**Menu Path:**
+- Review Management → Review Cycle Management
+- Goals Management → Goal Categories (NEW)
+- Goals Management → Goal Templates (NEW)
+- System Settings → Goal Configuration (NEW)
+- System Settings → Notification Settings
+
+**Actions:**
+1. Create review cycle (Q1 2025, Q2 2025, etc.) with specific start/end dates
+2. Set review timeline: self-assessment (10 days) → R1 review (10 days) → R2 review (10 days)
+3. Configure goal categories (Technical, Professional, Personal, Leadership)
+4. Create goal templates for common objectives
+5. Enable goal visibility settings for review process integration
+6. Setup goal achievement measurement criteria and evidence requirements
+7. Configure notification schedules and escalation rules
+8. Define goal-KRA alignment requirements
+
+**NEW FEATURES:**
+- Goal categories with color coding and evidence requirements
+- Goal templates for standardized objective setting
+- Goal visibility configuration in review matrix
+- Cross-cycle goal tracking setup
+
+**Database Tables Used:**
+- review_cycle_mst, review_schedule_mst, review_schedule_timeline
+- goal_categories_mst (NEW), goal_templates_mst (NEW)
+- review_goal_display_config (NEW)
+- system_notifications_trn
+
+#### Step 3: Employee - Initial Goal Setting with KRA Alignment
+**Who:** Employee  
+**When:** Beginning of review cycle, after admin setup  
+**Menu Path:**
+- Goals → My Goals → Add New Goal (ENHANCED)
+- Goals → Goal Categories (NEW)
+- Goals → Goal Templates & Best Practices (NEW)
+
+**Actions:**
+1. Login to system and navigate to Goals section
+2. Review available goal categories and templates
+3. Create personal and professional goals for the current cycle
+4. Link goals to specific KRAs where applicable
+5. Set SMART targets: Specific, Measurable, Achievable, Relevant, Time-bound
+6. Define success criteria and evidence requirements for each goal
+7. Set quarterly milestones and progress tracking methods
+8. Submit goals for manager approval
+
+**ENHANCED FEATURES:**
+- Goal-KRA linking for better performance alignment
+- Template-based goal creation for consistency
+- Quarterly milestone setting for progress tracking
+- Evidence requirements definition upfront
+
+**Database Tables Used:**
+- user_goals_enhanced (NEW), goal_kra_mapping (NEW)
+- goal_categories_mst, goal_templates_mst
+- goal_progress_tracking (NEW)
+
+#### Step 4: Manager - Goal Approval & Department Alignment
+**Who:** Manager (R2 Reviewer)  
+**When:** After employees set their goals  
+**Menu Path:**
+- Goals & Feedback → Team Goals → Review & Approve (ENHANCED)
+- Team Management → Goal Alignment (NEW)
+- Goals & Feedback → Goal Approval Workflow (NEW)
+
+**Actions:**
+1. Review all team member goals for quality and alignment
+2. Check goal alignment with department and project objectives
+3. Approve, modify, or suggest changes to individual goals
+4. Ensure goals are SMART and achievable within the timeframe
+5. Link individual goals to team and department-level objectives
+6. Set expectations for evidence and progress tracking
+7. Finalize goal assignments and communicate expectations
+
+**NEW FEATURES:**
+- Goal approval workflow with feedback loop
+- Department-level goal alignment checking
+- Goal quality assessment tools
+
+**Database Tables Used:**
+- user_goals_enhanced, goal_kra_mapping
+- user_reviewer_mapping_dtl
+- goal_progress_tracking
+
+### Phase 2: Review Cycle Execution with Enhanced Goal Visibility
+
+#### Step 5: System - Cycle Initiation with Goal Integration
+**Who:** Automated System  
+**When:** Review cycle start date  
+**Actions:**
+1. Generate review forms using assigned KRA templates for each employee
+2. Load employee goals into review interface with progress indicators
+3. Calculate current goal progress from tracking data
+4. Display previous cycle goal achievements (if applicable)
+5. Send notifications to all participants (employees, R1, R2 reviewers)
+6. Activate role-based dashboards with integrated goal visibility
+7. Initialize goal-KRA alignment scoring system
+
+**NEW FEATURES:**
+- Goals automatically integrated into review matrix
+- Previous cycle goal achievements visible
+- Goal progress bars and status indicators
+- Goal-KRA alignment scoring
+
+**Database Tables Used:**
+- user_review_trn_hdr, user_review_trn_dtl_enhanced
+- user_goals_enhanced, goal_achievement_history
+- review_goal_integration (NEW)
+- system_notifications_trn
+
+#### Step 6: Employee - Self Assessment with Goal Progress Review
+**Who:** Employee  
+**When:** Self-assessment phase (10 days)  
+**Menu Path:**
+- Reviews → Active Review → Self Assessment (ENHANCED)
+- Reviews → Active Review → Goal Progress Update (NEW)
+- Reviews → Active Review → Evidence Upload (NEW)
+
+**Actions:**
+1. Access review form with integrated goal display alongside KRAs
+2. Rate each KRA (1-10) with detailed comments and justifications
+3. **NEW:** Review current cycle goals and update progress percentages
+4. **NEW:** Provide evidence for goal achievements and milestones reached
+5. **NEW:** Self-assess goal completion levels with supporting documentation
+6. Upload attachments and evidence for both KRA performance and goal achievements
+7. Link goal achievements to specific KRA performance where applicable
+8. Submit comprehensive self-assessment including both KRA and goal data
+
+**ENHANCED FEATURES:**
+- Goals visible alongside each related KRA in review matrix
+- Real-time goal progress updates during review
+- Evidence upload for both KRA performance and goal achievements
+- Goal-KRA impact assessment
+
+**Database Tables Used:**
+- user_review_trn_dtl_enhanced (with new goal fields)
+- user_goals_enhanced, goal_progress_tracking
+- goal_evidence_attachments (NEW)
+- review_attachments_trn
+
+#### Step 7: Team Lead - R1 Review with Goal Validation
+**Who:** Team Lead (R1 Reviewer)  
+**When:** R1 review phase (10 days after self-assessment)  
+**Menu Path:**
+- Reviews → My Reviews (R1) → Review Employee (ENHANCED)
+- Reviews → My Reviews (R1) → Goal Assessment (NEW)
+- Team Management → Team Performance → Goal Tracking (NEW)
+
+**Actions:**
+1. Access review form showing employee's self-assessment data
+2. **NEW:** View employee goals with progress updates and evidence
+3. **NEW:** Validate goal achievements against provided evidence
+4. Rate each KRA (1-10) based on observations, deliverables, and goal progress
+5. **NEW:** Assess how goal achievements contribute to KRA performance
+6. Add development recommendations considering goal alignment and outcomes
+7. **NEW:** Provide feedback on goal setting effectiveness and achievement strategies
+8. Validate evidence quality for both KRA performance and goal completion
+9. Submit R1 review with comprehensive goal-informed assessment
+
+**NEW FEATURES:**
+- Goal achievements visible during KRA assessment
+- Goal evidence validation capabilities
+- Goal-KRA contribution analysis
+- Goal coaching recommendations
+
+**Database Tables Used:**
+- user_review_trn_dtl_enhanced (R1 sections with goal fields)
+- user_goals_enhanced, goal_evidence_attachments
+- goal_achievement_history
+- review_comments_trn
+
+#### Step 8: Manager - R2 Review with Complete Goal Context
+**Who:** Manager (R2 Reviewer)  
+**When:** R2 review phase (10 days after R1 completion)  
+**Menu Path:**
+- Reviews → My Reviews (R2) → Final Review (ENHANCED)
+- Reviews → My Reviews (R2) → Goal Validation (NEW)
+- Team Management → Review Management → Goal Analysis (NEW)
+
+**Actions:**
+1. View complete review data: Self + R1 assessments + Goal achievements
+2. **NEW:** Assess goal achievements against department and organizational objectives
+3. **NEW:** Validate evidence provided for goal completion at strategic level
+4. Rate KRAs (1-10) considering goal alignment, achievements, and business impact
+5. **NEW:** Provide strategic feedback on goal setting and achievement patterns
+6. Add career guidance incorporating goal achievement trends
+7. **NEW:** Set expectations and suggestions for next cycle goal planning
+8. Submit final review with comprehensive goal-performance analysis
+
+**NEW FEATURES:**
+- Complete goal context including cross-cycle trends
+- Strategic goal impact assessment
+- Goal-based career guidance
+- Next cycle goal recommendations
+
+**Database Tables Used:**
+- user_review_trn_dtl_enhanced (R2 sections with goal fields)
+- user_goals_enhanced, goal_achievement_history
+- cross_cycle_goal_analysis (NEW)
+- goal_analytics_summary (NEW)
+
+### Phase 3: Goal Achievement Assessment & System Calculation
+
+#### Step 9: System - Enhanced Score Calculation with Goal Integration
+**Who:** Automated System  
+**When:** After all reviews completed  
+**Actions:**
+1. Calculate weighted KRA scores using configured weightages (Self: 20%, R1: 40%, R2: 40%)
+2. **NEW:** Assess goal achievement percentages and completion levels
+3. **NEW:** Factor goal achievements into overall performance scoring
+4. **NEW:** Calculate goal-KRA alignment scores and contributions
+5. Generate department and organization-wide performance rankings
+6. Assign performance zones (Green/Yellow/Red) incorporating goal achievements
+7. **NEW:** Create goal achievement analytics and correlation metrics
+
+**NEW FEATURES:**
+- Goal achievement metrics integrated into performance scores
+- Goal-KRA alignment impact on final ratings
+- Goal achievement correlation with performance zones
+
+**Database Tables Used:**
+- user_review_trn_hdr (final calculations)
+- user_performance_summary (with goal metrics)
+- goal_analytics_summary (NEW)
+- zone_assignment_log
+
+#### Step 10: System - Cross-Cycle Goal Achievement Analysis
+**Who:** Automated System  
+**When:** During final calculation phase  
+**Actions:**
+1. **NEW:** Calculate individual goal completion rates across categories
+2. **NEW:** Track goal achievement trends from previous cycles
+3. **NEW:** Measure goal complexity and quality improvements over time
+4. **NEW:** Generate goal-performance correlation analytics
+5. **NEW:** Create evidence quality assessments and validation rates
+6. **NEW:** Update employee goal achievement profiles and patterns
+7. **NEW:** Generate insights for next cycle goal planning
+
+**NEW FEATURES:**
+- Cross-cycle goal achievement tracking
+- Goal quality and complexity trend analysis
+- Evidence-based achievement validation
+- Predictive insights for goal planning
+
+**Database Tables Used:**
+- goal_achievement_history (NEW)
+- cross_cycle_goal_analysis (NEW)
+- goal_analytics_summary (NEW)
+- user_performance_history
+
+#### Step 11: Manager - Goal Performance Analysis & Team Insights
+**Who:** Manager  
+**When:** After system calculations complete  
+**Menu Path:**
+- Reports & Analytics → Goal Achievement Reports (NEW)
+- Team Management → Goal Performance Analysis (NEW)
+- Goals & Feedback → Achievement Recognition (NEW)
+
+**Actions:**
+1. **NEW:** Review team-wide goal achievement statistics and trends
+2. **NEW:** Analyze correlation between goal achievements and performance ratings
+3. **NEW:** Identify high-performing goal achievers and recognition opportunities
+4. **NEW:** Review evidence quality and validation completeness across team
+5. **NEW:** Plan development interventions for consistent underachievers
+6. **NEW:** Recognize and reward exceptional goal achievements
+7. **NEW:** Prepare goal-focused performance discussions with team members
+
+**NEW FEATURES:**
+- Team goal achievement analytics dashboard
+- Goal-performance correlation insights
+- Evidence quality assessment tools
+- Goal achievement recognition system
+
+**Database Tables Used:**
+- goal_analytics_summary, user_performance_summary
+- goal_achievement_history
+- cross_cycle_goal_analysis
+- zone_assignment_log
+
+### Phase 4: Results Communication & Next Cycle Goal Planning
+
+#### Step 12: System - Results & Goal Achievement Communication
+**Who:** Automated System  
+**When:** After all calculations and analysis complete  
+**Actions:**
+1. Send performance results to all stakeholders (employees, managers, HR)
+2. **NEW:** Distribute personalized goal achievement summaries with evidence
+3. **NEW:** Generate goal achievement certificates and recognition materials
+4. Send performance zone assignments with goal achievement context
+5. **NEW:** Schedule goal-focused performance discussion meetings
+6. Create next cycle preparation materials including goal planning templates
+7. **NEW:** Send goal achievement trend reports to managers
+
+**NEW FEATURES:**
+- Goal achievement summaries and certificates
+- Goal-focused meeting scheduling
+- Goal planning templates for next cycle
+- Achievement trend notifications
+
+**Database Tables Used:**
+- system_notifications_trn
+- goal_achievement_history
+- goal_analytics_summary
+- user_performance_summary
+
+#### Step 13: Manager - Performance & Goal Achievement Discussion
+**Who:** Manager  
+**When:** Post-results communication phase  
+**Actions:**
+1. Conduct one-on-one performance discussions with each team member
+2. **NEW:** Review overall performance incorporating goal achievement analysis
+3. **NEW:** Discuss goal achievement patterns, successes, and challenges
+4. **NEW:** Analyze goal-setting effectiveness and improvement strategies
+5. Identify development areas using both KRA and goal achievement data
+6. **NEW:** Discuss career progression opportunities based on goal achievement trends
+7. **NEW:** Collaboratively plan next cycle goals with data-driven insights
+
+**NEW FEATURES:**
+- Goal achievement pattern analysis
+- Data-driven career discussions
+- Goal-setting effectiveness assessment
+- Collaborative goal planning with historical context
+
+**Menu Path:**
+- Team Management → Performance Discussions
+- Goals & Feedback → Goal Achievement Discussions (NEW)
+
+#### Step 14: Employee - Next Cycle Goal Setting with Historical Insights
+**Who:** Employee  
+**When:** After performance discussions  
+**Menu Path:**
+- Goals → Goal History → Achievement Analysis (NEW)
+- Goals → My Goals → Plan Next Cycle (NEW)
+- Goals → Goal Templates → Best Practices (NEW)
+- Goals → Cross-Cycle Goal Analysis (NEW)
+
+**Actions:**
+1. **NEW:** Review comprehensive goal achievement history and trends
+2. **NEW:** Analyze goal achievement patterns to identify strengths and improvement areas
+3. Set new goals incorporating lessons learned from previous cycle achievements
+4. **NEW:** Align new goals with career development plans based on achievement data
+5. **NEW:** Incorporate manager suggestions and department strategic objectives
+6. **NEW:** Use goal templates and best practices derived from high achievers
+7. Submit enhanced goal proposals with improved success strategies and evidence plans
+
+**NEW FEATURES:**
+- Historical goal achievement analysis
+- Data-driven goal setting with trend insights
+- Goal templates based on successful patterns
+- Evidence planning for goal validation
+
+**Database Tables Used:**
+- user_goals_enhanced, goal_achievement_history
+- cross_cycle_goal_analysis
+- goal_templates_mst, goal_categories_mst
+
+#### Step 15: System - Cycle Completion & Enhanced Data Archival
+**Who:** Automated System  
+**When:** End of review cycle  
+**Actions:**
+1. Archive completed reviews with comprehensive goal achievement data
+2. **NEW:** Update historical goal achievement profiles and trends
+3. **NEW:** Generate predictive analytics for next cycle goal planning
+4. **NEW:** Create goal achievement benchmarks and best practices repository
+5. **NEW:** Archive goal evidence and validation records
+6. Prepare enhanced templates and insights for next cycle
+7. **NEW:** Generate organizational goal achievement insights and reports
+8. Clean up temporary data and optimize database performance
+9. Schedule next cycle initiation with improved goal integration
+
+**NEW FEATURES:**
+- Comprehensive goal achievement archival
+- Predictive goal planning analytics
+- Goal benchmarking and best practices
+- Organizational goal insights generation
+
+**Database Tables Used:**
+- goal_achievement_history, user_performance_history
+- goal_analytics_summary
+- cross_cycle_goal_analysis
+- All archival and historical tables
+
+## Complete Menu Structure with Goal Enhancements
+
+### Admin/HR Role Menus
+
+#### Dashboard (ENHANCED)
+- **System Overview:** Performance metrics + Goal achievement rates across organization
+- **HR Analytics:** Workforce analytics + Goal completion trends and patterns
+
+#### Masters (NO CHANGES)
+- **Department Master:** Create/Edit/Delete Departments
+- **Domain Master:** Create/Edit/Delete Work Domains  
+- **Project Master:** Create/Edit/Delete Projects, Map to Departments
+- **KRA Master:** Create/Edit/Delete KRAs with domain specificity
+
+#### User Management (NO CHANGES)
+- **User Operations:** Add/Edit/Delete Users, Role Assignment
+- **Reviewer Mapping:** Assign R1 and R2 reviewers to employees
+- **Bulk Operations:** Import/Export Users, Bulk Role Changes
+
+#### KRA Management (ENHANCED)
+- **KRA Library:** View All KRAs by Domain/Project with usage statistics
+- **Project-KRA Mapping:** Assign KRAs to Projects with weightage distribution
+- **KRA-Goal Alignment Templates:** NEW - Create templates linking KRAs to goal categories
+
+#### Goals Management (NEW SECTION)
+- **Goal Categories:** NEW - Define and manage goal types (Technical, Professional, Personal, Leadership)
+- **Goal Templates:** NEW - Create standardized goal templates for common objectives
+- **Goal Analytics:** NEW - Organization-wide goal achievement statistics and trends
+- **Goal Settings:** NEW - Configure goal visibility, tracking, and validation requirements
+- **Goal-KRA Alignment:** NEW - Manage relationships between goals and performance criteria
+- **Cross-Cycle Analysis:** NEW - Multi-cycle goal achievement trend analysis
+
+#### Review Management (ENHANCED)
+- **Review Cycle Management:** Create/Initiate Review Cycles
+- **Review Status Tracking:** Monitor Review Progress Across Organization
+- **Goal Achievement Tracking:** NEW - Track goal completion across all employees
+- **Goal-Performance Correlation Analysis:** NEW - Analyze relationships between goals and performance
+- **Review Analytics:** System-wide Review Analytics with goal completion metrics
+
+#### Reports & Analytics (ENHANCED)
+- **Organization Reports:** Performance Analytics + Goal achievement distributions
+- **Goal Achievement Reports:** NEW - Comprehensive goal completion and trend reports
+- **Cross-Cycle Goal Trends:** NEW - Historical goal achievement pattern analysis
+- **Review Compliance:** Audit & Governance Reports including goal validation compliance
+
+#### System Settings (ENHANCED)
+- **General Configuration:** Company Info, Working Hours, Performance Zones, Rating Scales
+- **Goal Configuration:** NEW - Goal visibility settings, evidence requirements, validation rules
+- **Notification Settings:** Email/SMS Templates including goal achievement notifications
+
+### Manager Role Menus
+
+#### Dashboard (ENHANCED)
+- **Personal Performance:** Own Performance Overview + Personal goal progress
+- **Department Overview:** Department Performance Metrics + Team goal achievements
+
+#### Projects (NO CHANGES)
+- **Project Management:** Manage Projects in Department
+- **KRA Assignment:** Assign KRAs to Projects
+- **Project Performance:** Monitor Project Team Performance
+
+#### Team Management (ENHANCED)
+- **Team Performance:** Department Team Overview with individual goal achievements
+- **Team Goal Alignment:** NEW - Align individual goals with department objectives
+- **Goal Achievement Monitoring:** NEW - Real-time tracking of team goal progress
+- **Review Management:** Manage Reviews as R2 with goal validation capabilities
+- **Resource Planning:** Team Resource Allocation including goal-based capacity planning
+
+#### Reviews (ENHANCED)
+- **My Reviews (R2):** Reviews Assigned as R2 Reviewer with integrated goal assessment
+- **Goal Validation Dashboard:** NEW - Centralized view of goal evidence and achievements
+- **Review Tracking:** Track Department Review Progress including goal completion
+- **Review Analytics:** Department Review Insights with goal-performance correlations
+
+#### Goals & Feedback (ENHANCED)
+- **Team Goals:** Department and Project Goals with approval workflows
+- **Goal Approval Workflow:** NEW - Systematic review and approval of employee goals
+- **Goal Achievement Recognition:** NEW - Tools for recognizing and rewarding goal achievements
+- **Goal-Performance Correlation:** NEW - Analytics showing goal impact on performance ratings
+- **Feedback Management:** Give/Receive Feedback with goal-focused discussions
+
+### Team Lead Role Menus
+
+#### Dashboard (ENHANCED)
+- **Personal Performance:** Own Performance Overview + Leadership and mentoring goals
+- **Project Team Overview:** Direct Reports Performance + Project goal achievements
+
+#### Team Management (ENHANCED)
+- **Team Performance:** Monitor Project Team with individual goal tracking
+- **Team Goal Coaching:** NEW - Coach team members on goal setting and achievement
+- **Individual Goal Progress Tracking:** NEW - Monitor progress of each team member's goals
+- **Team Development:** Mentoring & Coaching with goal-focused development plans
+
+#### Reviews (ENHANCED)
+- **My Reviews (R1):** Reviews Assigned as R1 Reviewer with goal assessment capabilities
+- **Goal Evidence Validation:** NEW - Review and validate goal achievement evidence
+- **Review Support:** Assist in Review Process including goal-related peer feedback
+
+#### Goals & Feedback (ENHANCED)
+- **Project Goals:** Project Team Goals with milestone tracking
+- **Goal Mentoring Dashboard:** NEW - Tools for coaching team members on goal achievement
+- **Goal Achievement Coaching:** NEW - Specialized coaching for goal setting and completion
+- **Continuous Feedback:** Real-time Feedback System including goal progress discussions
+
+### Employee Role Menus
+
+#### Dashboard (ENHANCED)
+- **My Performance:** Current Score (85%), Performance Zone (Green), Goal Progress (5/7 goals), Skill Development (78%)
+- **Team Context:** Team Average, My Position, Team Goals, Collaborative goal metrics
+
+#### Reviews (ENHANCED)
+- **Active Review:** Current Review Management with integrated goal progress updates
+- **Goal Evidence Upload:** NEW - Upload and manage evidence for goal achievements
+- **Review History:** Past Reviews and Feedback with goal achievement trends
+- **Review Status:** Track Review Progress including goal validation status
+
+#### Goals (COMPLETELY ENHANCED SECTION)
+- **My Goals:** Personal Goal Management with real-time progress tracking
+- **Goal Progress Tracking:** NEW - Detailed progress updates with milestone management
+- **Goal Evidence Management:** NEW - Upload, organize, and manage goal achievement evidence
+- **Goal Achievement History:** NEW - Complete history of goal achievements across cycles
+- **Goal Templates & Best Practices:** NEW - Access to proven goal templates and success strategies
+- **Cross-Cycle Goal Analysis:** NEW - Personal goal achievement trends and insights
+- **Goal-Performance Insights:** NEW - Analysis of how goal achievements impact performance ratings
+- **Goal Categories:** NEW - Browse and select from available goal categories
+
+#### Feedback (NO CHANGES)
+- **Feedback Exchange:** Give/Receive Feedback with goal-focused conversations
+
+#### Profile (ENHANCED)
+- **Personal Information:** Profile Management
+- **My Reviewers:** View Reporting Structure (R1, R2, Review Chain)
+- **Goal Preferences:** NEW - Set preferences for goal categories, templates, and notification settings
+
+## Technical Implementation Guidelines
+
+### Backend Architecture (NestJS/Node.js)
+
+#### API Structure
+```
+/api/v1/
+├── auth/                 # Authentication endpoints
+├── users/                # User management
+├── departments/          # Department operations
+├── projects/            # Project management
+├── domains/             # Domain management
+├── kras/                # KRA management
+├── templates/           # KRA templates
+├── goals/               # Goal management (NEW)
+├── goal-categories/     # Goal categories (NEW)
+├── goal-templates/      # Goal templates (NEW)
+├── reviews/             # Review process
+├── cycles/              # Review cycles
+├── notifications/       # Notification system
+├── reports/             # Reporting and analytics
+├── zones/               # Performance zones
+└── analytics/           # Advanced analytics
+```
+
+#### Key Services Required
+
+**Goal Management Service**
+```typescript
+@Injectable()
+export class GoalService {
+  // Goal CRUD operations
+  async createGoal(goalData: CreateGoalDto): Promise<Goal>
+  async updateGoalProgress(goalId: string, progress: GoalProgressDto): Promise<Goal>
+  async linkGoalToKRA(goalId: string, kraId: string): Promise<void>
+  async getGoalsByUser(userId: string, cycleId: string): Promise<Goal[]>
+  async getGoalAchievementHistory(userId: string): Promise<GoalHistory[]>
+  
+  // Goal evidence management
+  async uploadGoalEvidence(goalId: string, file: File): Promise<Evidence>
+  async validateGoalEvidence(evidenceId: string, validation: ValidationDto): Promise<void>
+  
+  // Cross-cycle analysis
+  async getCrossCycleAnalysis(userId: string): Promise<CrossCycleAnalysis>
+  async getGoalPerformanceCorrelation(userId: string): Promise<CorrelationData>
+}
+```
+
+**Enhanced Review Service**
+```typescript
+@Injectable()
+export class ReviewService {
+  // Review with goal integration
+  async getReviewWithGoals(reviewId: string): Promise<ReviewWithGoals>
+  async submitSelfAssessmentWithGoals(data: SelfAssessmentWithGoalsDto): Promise<void>
+  async submitR1ReviewWithGoalValidation(data: R1ReviewWithGoalsDto): Promise<void>
+  async submitR2ReviewWithGoalAnalysis(data: R2ReviewWithGoalsDto): Promise<void>
+  
+  // Goal-KRA alignment
+  async calculateGoalKRAAlignment(reviewId: string): Promise<AlignmentScore>
+  async getGoalImpactOnKRAs(userId: string, cycleId: string): Promise<GoalImpact[]>
+}
+```
+
+**Analytics Service Enhancement**
+```typescript
+@Injectable()
+export class AnalyticsService {
+  // Goal analytics
+  async getGoalAchievementAnalytics(filters: AnalyticsFilters): Promise<GoalAnalytics>
+  async getGoalPerformanceCorrelation(filters: AnalyticsFilters): Promise<CorrelationData>
+  async getCrossCycleGoalTrends(userId: string): Promise<TrendData>
+  
+  // Enhanced reporting
+  async generateGoalAchievementReport(filters: ReportFilters): Promise<Report>
+  async generateGoalEvidenceReport(filters: ReportFilters): Promise<Report>
+}
+```
+
+### Frontend Architecture (React/Next.js)
+
+#### Component Structure
+```
+src/
+├── components/
+│   ├── common/           # Shared components
+│   ├── auth/            # Authentication components
+│   ├── dashboard/       # Dashboard components
+│   ├── reviews/         # Review process components
+│   ├── goals/           # Goal management components (NEW)
+│   ├── analytics/       # Analytics and reporting
+│   ├── admin/           # Admin interface components
+│   └── forms/           # Form components
+├── pages/
+│   ├── dashboard/       # Dashboard pages
+│   ├── reviews/         # Review pages
+│   ├── goals/           # Goal pages (NEW)
+│   ├── analytics/       # Analytics pages
+│   └── admin/           # Admin pages
+├── hooks/               # Custom React hooks
+├── services/            # API services
+├── utils/               # Utility functions
+└── types/               # TypeScript type definitions
+```
+
+#### Key Components
+
+**Enhanced Review Matrix**
+```jsx
+const ReviewMatrix = ({ reviewData, goals, onSubmit }) => {
+  return (
+    <div className="review-matrix">
+      {reviewData.kras.map(kra => (
+        <ReviewRow key={kra.id}>
+          <KRASection kra={kra} />
+          <GoalSection goals={goals.filter(g => g.kraId === kra.id)} />
+          <RatingSection kraId={kra.id} />
+          <CommentsSection kraId={kra.id} />
+          <EvidenceSection kraId={kra.id} />
+        </ReviewRow>
+      ))}
+    </div>
+  );
+};
+```
+
+**Goal Management Dashboard**
+```jsx
+const GoalDashboard = ({ userId, cycleId }) => {
+  const [goals, setGoals] = useState([]);
+  const [progress, setProgress] = useState({});
+  
+  return (
+    <div className="goal-dashboard">
+      <GoalProgressOverview goals={goals} />
+      <GoalList goals={goals} onUpdate={handleGoalUpdate} />
+      <GoalEvidenceManager goals={goals} />
+      <CrossCycleAnalysis userId={userId} />
+    </div>
+  );
+};
+```
+
+### Database Optimization
+
+#### Indexes Required
+```sql
+-- Performance indexes
+CREATE INDEX idx_user_goals_user_cycle ON user_goals_enhanced(user_id, cycle_id);
+CREATE INDEX idx_goal_progress_goal_date ON goal_progress_tracking(goal_id, update_date);
+CREATE INDEX idx_goal_evidence_goal_type ON goal_evidence_attachments(goal_id, evidence_type);
+CREATE INDEX idx_review_goal_integration ON review_goal_integration(review_dtl_id, goal_id);
+
+-- Analytics indexes
+CREATE INDEX idx_goal_achievement_user_cycle ON goal_achievement_history(user_id, cycle_id);
+CREATE INDEX idx_cross_cycle_analysis ON cross_cycle_goal_analysis(user_id, current_cycle_id, previous_cycle_id);
+CREATE INDEX idx_goal_analytics_summary ON goal_analytics_summary(user_id, cycle_id, department_id);
+
+-- Search indexes
+CREATE FULLTEXT INDEX idx_goal_search ON user_goals_enhanced(goal_title, goal_description);
+CREATE FULLTEXT INDEX idx_evidence_search ON goal_evidence_attachments(evidence_description);
+```
+
+#### Data Archival Strategy
+```sql
+-- Archive old goal data
+CREATE TABLE goal_achievement_history_archive AS 
+SELECT * FROM goal_achievement_history WHERE cycle_id IN (
+  SELECT cycle_id FROM review_cycle_mst WHERE cycle_end_date < DATE_SUB(NOW(), INTERVAL 2 YEAR)
+);
+
+-- Archive evidence files (move to cold storage)
+CREATE TABLE goal_evidence_archive AS
+SELECT * FROM goal_evidence_attachments WHERE goal_id IN (
+  SELECT goal_id FROM user_goals_enhanced WHERE cycle_id IN (
+    SELECT cycle_id FROM review_cycle_mst WHERE cycle_end_date < DATE_SUB(NOW(), INTERVAL 2 YEAR)
+  )
+);
+```
+
+### Security Implementation
+
+#### Authentication & Authorization
+```typescript
+// Role-based access control for goals
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('EMPLOYEE', 'MANAGER', 'ADMIN')
+@Controller('goals')
+export class GoalsController {
+  
+  @Get(':userId/goals')
+  @UseGuards(GoalAccessGuard) // Custom guard to check goal access permissions
+  async getUserGoals(@Param('userId') userId: string) {
+    // Implementation
+  }
+  
+  @Post(':goalId/evidence')
+  @UseGuards(GoalOwnershipGuard) // Ensure user owns the goal
+  async uploadEvidence(@Param('goalId') goalId: string, @UploadedFile() file: Express.Multer.File) {
+    // Implementation
+  }
+}
+```
+
+#### Data Validation
+```typescript
+// Goal creation DTO with validation
+export class CreateGoalDto {
+  @IsNotEmpty()
+  @Length(1, 200)
+  goal_title: string;
+  
+  @IsNotEmpty()
+  goal_description: string;
+  
+  @IsUUID()
+  category_id: string;
+  
+  @IsOptional()
+  @IsUUID()
+  kra_id?: string;
+  
+  @IsDateString()
+  target_date: string;
+  
+  @IsIn(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
+  priority_level: string;
+  
+  @IsNumeric()
+  @Min(0)
+  @Max(100)
+  progress_percentage: number;
+}
+```
+
+### File Storage & Management
+
+#### S3 Configuration for Goal Evidence
+```typescript
+@Injectable()
+export class FileStorageService {
+  async uploadGoalEvidence(file: Buffer, metadata: EvidenceMetadata): Promise<string> {
+    const key = `goal-evidence/${metadata.goalId}/${metadata.fileName}`;
+    
+    await this.s3Client.upload({
+      Bucket: 'pms-goal-evidence',
+      Key: key,
+      Body: file,
+      Metadata: {
+        goalId: metadata.goalId,
+        userId: metadata.userId,
+        evidenceType: metadata.evidenceType,
+        uploadDate: new Date().toISOString()
+      }
+    }).promise();
+    
+    return key;
+  }
+}
+```
+
+### Performance Considerations
+
+#### Caching Strategy
+```typescript
+// Redis caching for frequently accessed goal data
+@Injectable()
+export class GoalCacheService {
+  async cacheUserGoals(userId: string, cycleId: string, goals: Goal[]): Promise<void> {
+    const key = `user:${userId}:cycle:${cycleId}:goals`;
+    await this.redisClient.setex(key, 3600, JSON.stringify(goals));
+  }
+  
+  async getCachedGoalAnalytics(userId: string): Promise<GoalAnalytics | null> {
+    const key = `analytics:goals:${userId}`;
+    const cached = await this.redisClient.get(key);
+    return cached ? JSON.parse(cached) : null;
+  }
+}
+```
+
+#### Database Query Optimization
+```typescript
+// Optimized goal queries with joins
+async getGoalsWithKRAAlignment(userId: string, cycleId: string): Promise<GoalWithKRA[]> {
+  return this.goalRepository
+    .createQueryBuilder('goal')
+    .leftJoinAndSelect('goal.kra', 'kra')
+    .leftJoinAndSelect('goal.category', 'category')
+    .leftJoinAndSelect('goal.progressTracking', 'progress')
+    .leftJoinAndSelect('goal.evidence', 'evidence')
+    .where('goal.userId = :userId', { userId })
+    .andWhere('goal.cycleId = :cycleId', { cycleId })
+    .orderBy('goal.created_on', 'DESC')
+    .getMany();
+}
+```
+
+## Deployment & Configuration
+
+### Environment Variables
+```
+# Database Configuration
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=pms_enhanced
+DATABASE_USERNAME=pms_user
+DATABASE_PASSWORD=secure_password
+
+# Redis Configuration  
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# S3 Configuration
+AWS_S3_BUCKET=pms-goal-evidence
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=us-west-2
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION=24h
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USERNAME=your_email
+EMAIL_PASSWORD=your_app_password
+
+# File Upload Limits
+MAX_FILE_SIZE=10MB
+ALLOWED_FILE_TYPES=pdf,doc,docx,jpg,jpeg,png,xlsx
+```
+
+### Docker Configuration
+```dockerfile
+# Backend Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+CMD ["npm", "run", "start:prod"]
+```
+
+### Kubernetes Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pms-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pms-backend
+  template:
+    metadata:
+      labels:
+        app: pms-backend
+    spec:
+      containers:
+      - name: pms-backend
+        image: pms-backend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_HOST
+          value: "mysql-service"
+        - name: REDIS_HOST
+          value: "redis-service"
+```
+
+## Testing Strategy
+
+### Unit Tests
+```typescript
+// Goal service unit tests
+describe('GoalService', () => {
+  it('should create goal with KRA alignment', async () => {
+    const goalData = {
+      goal_title: 'Complete certification',
+      goal_description: 'Obtain AWS certification',
+      kra_id: 'kra-123',
+      target_date: '2025-12-31'
+    };
+    
+    const result = await goalService.createGoal(goalData);
+    expect(result.kra_id).toBe('kra-123');
+    expect(result.goal_title).toBe('Complete certification');
+  });
+});
+```
+
+### Integration Tests
+```typescript
+// Review with goals integration test
+describe('Review with Goals Integration', () => {
+  it('should display goals in review matrix', async () => {
+    const review = await reviewService.getReviewWithGoals('review-123');
+    expect(review.goals).toHaveLength(3);
+    expect(review.goals[0].progress_percentage).toBeGreaterThan(0);
+  });
+});
+```
+
+### E2E Tests
+```typescript
+// End-to-end goal flow test
+describe('Complete Goal Flow', () => {
+  it('should allow employee to set goals, track progress, and complete review', async () => {
+    // Set goal
+    await page.goto('/goals/my-goals');
+    await page.fill('#goal-title', 'Complete project milestone');
+    await page.click('#save-goal');
+    
+    // Update progress
+    await page.fill('#progress-percentage', '75');
+    await page.click('#update-progress');
+    
+    // Complete review with goal visibility
+    await page.goto('/reviews/active');
+    expect(await page.textContent('.goal-progress')).toContain('75%');
+  });
+});
+```
+
+This comprehensive specification includes all database tables, complete 15-step workflow, enhanced menu structure, technical implementation details, and deployment guidelines for building a full-featured Performance Management System with integrated goal management and cross-cycle tracking capabilities.

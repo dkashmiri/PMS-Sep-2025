@@ -28,7 +28,9 @@ import {
   FileSpreadsheet,
   Bell,
   HelpCircle,
-  Network
+  Network,
+  User,
+  CheckCircle
 } from 'lucide-react';
 
 interface User {
@@ -60,14 +62,20 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  // 1. DASHBOARD with 3 submenu types
   {
     id: 'dashboard',
     label: 'Dashboard',
     icon: Home,
-    roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE']
+    roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'],
+    submenu: [
+      { id: 'personal-dashboard', label: 'Personal Dashboard', icon: User, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'] },
+      { id: 'team-dashboard', label: 'Team Dashboard', icon: Users, roles: ['MANAGER', 'TEAMLEAD'] },
+      { id: 'organization-dashboard', label: 'Organization Dashboard', icon: Building2, roles: ['ADMIN', 'HR'] }
+    ]
   },
-  
-  // Admin/HR Section
+
+  // 2. MASTERS (kept as requested)
   {
     id: 'masters',
     label: 'Masters',
@@ -80,6 +88,8 @@ const menuItems: MenuItem[] = [
       { id: 'kra-master', label: 'KRA Master', icon: Target, roles: ['ADMIN', 'HR'] }
     ]
   },
+
+  // 3. USER MANAGEMENT
   {
     id: 'user-management',
     label: 'User Management',
@@ -87,135 +97,55 @@ const menuItems: MenuItem[] = [
     roles: ['ADMIN', 'HR'],
     submenu: [
       { id: 'user-operations', label: 'User Operations', icon: UserPlus, roles: ['ADMIN', 'HR'] },
-      { id: 'reviewer-mapping', label: 'Reviewer Mapping', icon: GitBranch, roles: ['ADMIN', 'HR'] },
-      { id: 'bulk-operations', label: 'Bulk Operations', icon: FileSpreadsheet, roles: ['ADMIN', 'HR'] }
+      { id: 'reviewer-mapping', label: 'Reviewer Mapping', icon: GitBranch, roles: ['ADMIN', 'HR'] }
     ]
   },
+
+  // 4. KRA MANAGEMENT (simplified)
   {
     id: 'kra-management',
     label: 'KRA Management',
     icon: Target,
     roles: ['ADMIN', 'HR', 'MANAGER'],
     submenu: [
-      { id: 'kra-operations', label: 'KRA Operations', icon: Target, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'kra-mapping', label: 'KRA Mapping', icon: Network, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'kra-templates', label: 'KRA Templates', icon: FileText, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'kra-bulk-operations', label: 'Bulk Operations', icon: Database, roles: ['ADMIN', 'HR', 'MANAGER'] }
+      { id: 'department-templates', label: 'Department Templates', icon: FileText, roles: ['MANAGER'] },
+      { id: 'kra-operations', label: 'KRA Operations', icon: Settings, roles: ['ADMIN', 'HR'] }
     ]
   },
-  
-  // Goal Management (All Roles)
-  {
-    id: 'goals-management',
-    label: 'Goals Management',
-    icon: Target,
-    roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'],
-    submenu: [
-      { id: 'goal-management', label: 'Goal Management', icon: Target, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'goal-operations', label: 'Goal Operations', icon: Settings, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'] },
-      { id: 'goal-analytics', label: 'Goal Analytics', icon: BarChart3, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'goal-evidence', label: 'Evidence Management', icon: FileText, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'] },
-      { id: 'my-goals', label: 'My Goals', icon: Award, roles: ['EMPLOYEE', 'TEAMLEAD', 'MANAGER'] },
-      { id: 'team-goals', label: 'Team Goals', icon: Users, roles: ['MANAGER', 'TEAMLEAD'] },
-      { id: 'goal-categories', label: 'Goal Categories', icon: Layers, roles: ['ADMIN', 'HR'] },
-      { id: 'goal-templates', label: 'Goal Templates', icon: Database, roles: ['ADMIN', 'HR', 'MANAGER'] }
-    ]
-  },
-  
-  // Review Management
+
+  // 5. REVIEW MANAGEMENT (simplified to 4 items)
   {
     id: 'review-management',
     label: 'Review Management',
     icon: FileText,
     roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'],
     submenu: [
-      { id: 'review-management-main', label: 'Review Management', icon: FileText, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'review-operations', label: 'Review Operations', icon: Settings, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'review-analytics', label: 'Review Analytics', icon: BarChart3, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'performance-assessment', label: 'Performance Assessment', icon: Award, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD'] },
-      { id: 'my-reviews', label: 'My Reviews', icon: FileText, roles: ['EMPLOYEE', 'TEAMLEAD', 'MANAGER'] },
-      { id: 'team-reviews', label: 'Team Reviews', icon: Users, roles: ['MANAGER', 'TEAMLEAD'] },
       { id: 'review-cycles', label: 'Review Cycles', icon: Calendar, roles: ['ADMIN', 'HR'] },
-      { id: 'review-templates', label: 'Review Templates', icon: Database, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'review-workflows', label: 'Review Workflows', icon: GitBranch, roles: ['ADMIN', 'HR'] },
-      { id: 'cross-cycle-analysis', label: 'Cross-Cycle Analysis', icon: TrendingUp, roles: ['ADMIN', 'HR', 'MANAGER'] }
+      { id: 'my-reviews', label: 'My Reviews', icon: FileText, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'] },
+      { id: 'team-reviews', label: 'Team Reviews', icon: Users, roles: ['MANAGER', 'TEAMLEAD'] },
+      { id: 'review-status', label: 'Review Status', icon: CheckCircle, roles: ['ADMIN', 'HR', 'MANAGER'] }
     ]
   },
-  
-  // Team Management (Manager/TeamLead)
+
+  // 6. ANALYTICS (context-based, no submenus)
   {
-    id: 'team-management',
-    label: 'Team Management',
-    icon: Users,
-    roles: ['MANAGER', 'TEAMLEAD'],
-    submenu: [
-      { id: 'team-performance', label: 'Team Performance', icon: TrendingUp, roles: ['MANAGER', 'TEAMLEAD'] },
-      { id: 'team-development', label: 'Team Development', icon: Award, roles: ['MANAGER', 'TEAMLEAD'] },
-      { id: 'resource-planning', label: 'Resource Planning', icon: Calendar, roles: ['MANAGER'] }
-    ]
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD']
   },
-  
-  // Projects (Manager/TeamLead)
+
+  // 7. PROFILE (all users)
   {
-    id: 'projects',
-    label: 'Projects',
-    icon: FolderOpen,
-    roles: ['MANAGER', 'TEAMLEAD'],
-    submenu: [
-      { id: 'project-management', label: 'Project Management', icon: Briefcase, roles: ['MANAGER', 'TEAMLEAD'] },
-      { id: 'project-performance', label: 'Project Performance', icon: TrendingUp, roles: ['MANAGER', 'TEAMLEAD'] }
-    ]
-  },
-  
-  // Reports & Analytics
-  {
-    id: 'reports-analytics',
-    label: 'Reports & Analytics',
-    icon: PieChart,
-    roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'],
-    submenu: [
-      { id: 'analytics-dashboard', label: 'Analytics Dashboard', icon: TrendingUp, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'performance-reports', label: 'Performance Reports', icon: BarChart3, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'goal-reports', label: 'Goal Reports', icon: Target, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE'] },
-      { id: 'review-reports', label: 'Review Reports', icon: Award, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'team-analytics', label: 'Team Analytics', icon: Users, roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD'] },
-      { id: 'trend-analysis', label: 'Trend Analysis', icon: TrendingUp, roles: ['ADMIN', 'HR', 'MANAGER'] },
-      { id: 'export-center', label: 'Export Center', icon: FileSpreadsheet, roles: ['ADMIN', 'HR', 'MANAGER'] }
-    ]
-  },
-  
-  // Feedback (All Roles)
-  {
-    id: 'feedback',
-    label: 'Feedback',
-    icon: UserCheck,
+    id: 'profile',
+    label: 'Profile',
+    icon: User,
     roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE']
-  },
-  
-  // Personal Settings (All Users)
-  {
-    id: 'personal-settings',
-    label: 'Personal Settings',
-    icon: UserCheck,
-    roles: ['ADMIN', 'HR', 'MANAGER', 'TEAMLEAD', 'EMPLOYEE']
-  },
-  
-  // System Settings (Admin/HR Only)
-  {
-    id: 'system-settings',
-    label: 'System Settings',
-    icon: Settings,
-    roles: ['ADMIN', 'HR'],
-    submenu: [
-      { id: 'system-config', label: 'System Configuration', icon: Settings, roles: ['ADMIN'] },
-      { id: 'goal-config', label: 'Goal Configuration', icon: Target, roles: ['ADMIN', 'HR'] },
-      { id: 'notification-config', label: 'Notification Settings', icon: Bell, roles: ['ADMIN', 'HR'] }
-    ]
   }
 ];
 
 export function Sidebar({ user, activeMenu, onMenuChange, collapsed, onToggleCollapse }: SidebarProps) {
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['kra-management', 'goals-management']));
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['dashboard', 'review-management']));
 
   const toggleMenu = (menuId: string) => {
     const newExpanded = new Set(expandedMenus);

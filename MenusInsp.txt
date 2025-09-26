@@ -1,0 +1,439 @@
+Role Menu Sub Menu Functions Fields/Elements
+Admin/HR Dashboard
+System
+Overview
+Organization
+Health Score,
+System Usage
+Stats,
+Performance
+Distribution
+Overall performance metric (0-100%),
+Active users (148/156), Review
+completion rate (78%), Performance
+zones (Green: 35, Yellow: 89, Red:
+32)
+HR Analytics
+Workforce
+Analytics,
+Employee
+Engagement,
+Training Metrics
+Total headcount (156), Attrition rate
+(12%), eNPS Score (42), Training
+completion (156 courses)
+Masters
+Department
+Master
+Create/Edit/Delete
+Departments
+Department Name, Description,
+Department Head, Status
+Performance Management System - Complete
+Menu Structure (Final Updated)
+Updated Project Flow & Structure
+Organizational Structure:
+Company → Departments → Projects (optional) → Employees
+Department Master → Contains multiple Projects
+Project Master → Maps to specific Departments, has KRA mapping
+KRA Master → Can be domain-specific and project-specific
+User Management → Dept + Domain + R1 (Team Lead) + R2 (Manager) mapping
+Review Flow:
+1. Employee Self-Assessment (with ratings, comments, attachments)
+2. R1 Review (Team Lead - can see employee's data + add own)
+3. R2 Review (Manager - can see all previous data + add own)
+4. System Calculation → Green/Yellow/Red zones based on weighted scores
+ROLE-BASED MENU STRUCTURE
+1. ADMIN/HR ROLE
+Role Menu Sub Menu Functions Fields/Elements
+Domain
+Master
+Create/Edit/Delete
+Work Domains
+Domain Name (QA, Development,
+Marketing), Description, Skills
+Mapping
+Project
+Master
+Create/Edit/Delete
+Projects, Map to
+Departments
+Project Name, Department Mapping,
+Project Lead, Status, KRA
+Assignment
+KRA Master
+Create/Edit/Delete
+KRAs
+KRA Name, Code, Category
+(Technical/Behavioral/Professional),
+Description, Domain, Min/Max Score,
+Weightage
+User
+Management
+User
+Operations
+Add/Edit/Delete
+Users, Role
+Assignment
+Full Name, Email, Employee Code,
+Department, Domain, Project, R1
+(Team Lead), R2 (Manager), Status
+Reviewer
+Mapping
+Assign R1 and R2
+reviewers to
+employees
+Employee List, R1 Assignment, R2
+Assignment, Effective Dates
+Bulk
+Operations
+Import/Export
+Users, Bulk Role
+Changes
+CSV Upload, Bulk Edit Forms,
+Validation Results
+KRA
+Management
+KRA Library
+View All KRAs by
+Domain/Project
+KRA List, Filter by Domain/Project,
+Usage Statistics
+Project-KRA
+Mapping
+Assign KRAs to
+Projects
+Project Selection, Available KRAs,
+Selected KRAs, Weightage
+Distribution
+Template
+Versioning
+Manage KRA
+Template Versions
+Version History, Approval Status,
+Effective Dates
+Review
+Management
+Review Cycle
+Management
+Create/Initiate
+Review Cycles
+Cycle Name (Q1 2025), Start/End
+Dates, Departments/Projects
+Included, Notification Settings
+Review Status
+Tracking
+Monitor Review
+Progress Across
+Organization
+Employee Name, Department,
+Project, R1 Status, R2 Status, Overall
+Status, Days Pending
+Review
+Analytics
+System-wide
+Review Analytics
+Completion Rates by Department,
+Average Review Time, Bottleneck
+Analysis
+Reports &
+Analytics
+Organization
+Reports
+Performance
+Analytics, Trend
+Analysis
+Department Comparisons,
+Performance Trends, Goal
+Achievement, Zone Distribution
+Review
+Compliance
+Audit &
+Governance
+Reports
+Review Completion Compliance,
+Timeline Adherence, Exception
+Reports
+System
+Settings
+General
+Configuration
+System-wide
+Settings
+Company Info, Working Hours,
+Performance Zones (Green ≥75%,
+Yellow 25-75%, Red <25%), Rating
+Scales
+Role Menu Sub Menu Functions Fields/Elements
+Notification
+Settings
+Email/SMS
+Templates
+Review Reminder Templates,
+Escalation Rules, Frequency Settings
+Role Menu Sub Menu Functions Fields/Elements
+Manager Dashboard
+Personal
+Performance
+Own Performance
+Overview
+Personal Score, Goals Progress,
+Feedback Received, Development
+Activities
+Department
+Overview
+Department
+Performance
+Metrics
+Department Average, Team Size,
+Performance Distribution, Project
+Status, Review Progress
+Projects
+Project
+Management
+Manage Projects
+in Department
+Project List, Project KRA
+Assignment, Team Lead
+Assignment, Project Performance
+KRA
+Assignment
+Assign KRAs to
+Projects
+Project Selection, Available KRAs
+(by domain), KRA Selection,
+Weightage Setting
+Project
+Performance
+Monitor Project
+Team Performance
+Project-wise Performance, Team
+Member Status, Goal Achievement
+Team
+Management
+Team
+Performance
+Department Team
+Overview
+Employee List, Current Scores,
+Performance Trends, Review Status,
+R1/R2 Assignment
+Review
+Management
+Manage Reviews
+as R2
+Pending R2 Reviews, Review Forms,
+Team Member Assessment,
+Development Planning
+Resource
+Planning
+Team Resource
+Allocation
+Project Assignments, Workload
+Distribution, Skills Matrix, Capacity
+Planning
+Reviews
+My Reviews
+(R2)
+Reviews Assigned
+as R2 Reviewer
+Employee Name, Project, R1 Status,
+Review Form, Due Date, Priority
+Review
+Tracking
+Track Department
+Review Progress
+Review Status by Employee,
+Bottlenecks, Escalations,
+Completion Rate
+Review
+Analytics
+Department
+Review Insights
+Completion Rates, Score
+Distributions, Performance Trends
+Goals &
+Feedback
+Team Goals
+Department and
+Project Goals
+Goal Setting, Progress Tracking,
+Achievement Recognition
+Feedback
+Management
+Give/Receive
+Feedback
+Feedback Forms, 360° Reviews,
+Recognition Tools
+2. MANAGER ROLE
+Role Menu Sub Menu Functions Fields/Elements
+Team
+Lead
+Dashboard
+Personal
+Performance
+Own Performance
+Overview
+Personal Score, Goals Progress,
+Leadership Activities, Mentoring
+Sessions
+Project Team
+Overview
+Direct Reports
+Performance
+Team Members, Average
+Performance, Review Status, Project
+Goals
+Team
+Management
+Team
+Performance
+Monitor Project
+Team
+Individual Performance Tracking,
+Goal Progress, Quality Metrics
+Team
+Development
+Mentoring &
+Coaching
+1:1 Coaching Schedule, Skill
+Development Plans, Knowledge
+Transfer
+Reviews
+My Reviews
+(R1)
+Reviews Assigned
+as R1 Reviewer
+Employee Name, Self-Assessment
+Status, Review Form, Evidence
+Review, Comments
+Review Support
+Assist in Review
+Process
+Peer Reviews, Calibration Support,
+Feedback Contribution
+Goals &
+Feedback
+Project Goals
+Project Team
+Goals
+Goal Setting for Project, Progress
+Monitoring, Team Alignment
+Continuous
+Feedback
+Real-time
+Feedback System
+Recognition, Performance
+Conversations, Development
+Recommendations
+Role Menu Sub Menu Functions Fields/Elements
+Employee Dashboard
+My
+Performance
+Personal
+Performance
+Overview
+Current Score (85%), Performance
+Zone (Green), Goals Progress (5/7),
+Skill Development (78%)
+Team Context
+Project/Team
+Performance View
+Team Average, My Position, Team
+Goals, Collaboration Metrics
+Reviews Active Review
+Current Review
+Management
+Self-Assessment Form, KRA Ratings
+(1-10), Comments Box, File
+Attachments, Evidence Upload
+Review History
+Past Reviews and
+Feedback
+Previous Scores, Trend Analysis, R1/R2
+Comments, Development Progress
+Review Status
+Track Review
+Progress
+Current Status (Self/R1/R2), Timeline,
+Next Actions, Feedback Received
+Goals My Goals
+Personal Goal
+Management
+Goal Setting, Progress Updates,
+Evidence Collection, Achievement
+Tracking
+3. TEAM LEAD ROLE
+4. EMPLOYEE ROLE
+Role Menu Sub Menu Functions Fields/Elements
+Goal History
+Historical Goal
+Performance
+Previous Goals, Achievement Rate,
+Growth Areas
+Feedback
+Feedback
+Exchange
+Give/Receive
+Feedback
+Request Feedback, Peer Feedback,
+View Feedback History, Recognition
+Wall
+Profile
+Personal
+Information
+Profile
+Management
+Personal Details, Skills Update,
+Contact Info, Career Preferences
+My Reviewers
+View Reporting
+Structure
+R1 (Team Lead), R2 (Manager), Review
+Chain, Escalation Path
+REVIEW FORM STRUCTURE (Matrix View)
+Employee Self-Assessment Section:
+KRA Name | Self Rating (1-10) | Comments | Attachments | Evidence Links
+R1 Review Section (Team Lead):
+View Employee Data | R1 Rating (1-10) | R1 Comments | R1 Attachments | Development
+Notes
+R2 Review Section (Manager):
+View All Previous Data | R2 Rating (1-10) | R2 Comments | R2 Attachments | Final
+Recommendations
+System Calculation:
+Weighted Score | Final Percentage | Performance Zone | Improvement Areas | Next
+Quarter Goals
+REVIEW STATUS TRACKING
+Status Indicators:
+🔴 Not Started - Employee hasn't begun self-assessment
+🟡 Self-Assessment In Progress - Employee is filling form
+🟠 Pending R1 - Waiting for Team Lead review
+🟢 R1 Complete, Pending R2 - Waiting for Manager review
+✅ Review Complete - All reviewers done, score calculated
+⚠️ Overdue - Past deadline at any stage
+This structure provides complete visibility, simplified navigation, and comprehensive review
+management while maintaining the flexibility for different organizational structures (with or
+without projects/team leads).
+Tracking Views:
+Employee Level: Can see own status only
+Team Lead Level: Can see all direct reports' status
+Manager Level: Can see entire department status
+Admin Level: Can see organization-wide status with drill-down
+PERFORMANCE ZONES CONFIGURATION
+Zone Definition:
+Green Zone: ≥75th percentile (Top performers)
+Yellow Zone: 25th-75th percentile (Average performers)
+Red Zone: <25th percentile (Needs improvement)
+Zone Features:
+Color-coded dashboards
+Automatic alerts for Red zone employees
+Development plan recommendations
+Manager notification for zone changes
+KEY WORKFLOW SUMMARY
+1. Setup Phase: Admin creates Departments → Projects → Assigns KRAs to Projects →
+Creates Users with R1/R2 mapping
+2. Review Initiation: Admin initiates review cycle → All employees notified
+3. Review Process: Employee Self-Assessment → R1 Review → R2 Review → System
+Calculation
+4. Tracking: Real-time status tracking at all levels with escalation alerts
+5. Analytics: Performance zones, trends, and development planning
